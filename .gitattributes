@@ -1,0 +1,2 @@
+dist/ActivityStats.exe filter=lfs diff=lfs merge=lfs -text
+build/ActivityStats/ActivityStats.pkg filter=lfs diff=lfs merge=lfs -text
