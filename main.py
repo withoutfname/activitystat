@@ -1,24 +1,35 @@
 import sys
 import os
+import io
+
+
 from PySide6.QtCore import QUrl, QtMsgType, qInstallMessageHandler
 from PySide6.QtQml import QQmlApplicationEngine
 from PySide6.QtWidgets import QApplication
 from src.backend.database import Database
-from src.backend.services.stats_service import StatsService
+from src.backend.services import StatsService, DashboardService
 from src.frontend.controllers import DashboardController, TimeController, LibraryController
 
 def qt_message_handler(mode, context, message):
-    """Обработчик сообщений Qt (включая console.log из QML)"""
-    if mode == QtMsgType.QtInfoMsg:
-        level = 'INFO'
-    elif mode == QtMsgType.QtWarningMsg:
-        level = 'WARNING'
-    elif mode == QtMsgType.QtCriticalMsg:
-        level = 'CRITICAL'
-    elif mode == QtMsgType.QtFatalMsg:
-        level = 'FATAL'
-    else:
-        level = 'DEBUG'
+    try:
+        if mode == QtMsgType.QtInfoMsg:
+            level = 'INFO'
+        elif mode == QtMsgType.QtWarningMsg:
+            level = 'WARNING'
+        elif mode == QtMsgType.QtCriticalMsg:
+            level = 'CRITICAL'
+        elif mode == QtMsgType.QtFatalMsg:
+            level = 'FATAL'
+        else:
+            level = 'DEBUG'
+
+        # Принудительно кодируем вывод в UTF-8
+        sys.stdout.buffer.write(f"[QML {level}] {message}\n".encode('utf-8', errors='replace'))
+        sys.stdout.flush()
+    except Exception as e:
+        print(f"Error in message handler: {e}")
+
+
 
     # Выводим только QML сообщения (console.log попадает в QtInfoMsg)
     if 'qml' in context.file.lower() or context.file.endswith('.qml'):
@@ -43,10 +54,11 @@ if __name__ == "__main__":
 
     # Initialize repositories and service
     stats_service = StatsService(db)
+    dashboard_service = DashboardService(db)
 
     # Create controllers
     try:
-        dashboard_controller = DashboardController(stats_service)
+        dashboard_controller = DashboardController(dashboard_service)
         time_controller = TimeController(stats_service)
         library_controller = LibraryController(stats_service)
         print("Controllers created")

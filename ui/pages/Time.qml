@@ -26,21 +26,21 @@ Item {
         running: true
         onTriggered: {
             if (timeController) {
-                console.log("timeController is ready, initializing...")
+                //console.dashbo("timeController is ready, initializing...")
                 rangeSlider.first.value = 0
                 rangeSlider.second.value = timeController.maxIntervalDays
                 timeController.setIntervalRange(0, timeController.maxIntervalDays)
                 controllerReady = true
                 pieSeries.updateSlices() // Явное обновление PieSeries при готовности
             } else {
-                console.log("timeController is still not available, retrying...")
+                //console.log("timeController is still not available, retrying...")
                 initTimer.restart()
             }
         }
     }
 
     Component.onCompleted: {
-        console.log("time.qml loaded, triggering pieSeries update")
+        //console.log("time.qml loaded, triggering pieSeries update")
         if (controllerReady) pieSeries.updateSlices()
     }
 
@@ -435,12 +435,12 @@ Item {
                                     visible: controllerReady && timeController && timeController.pieChartData && timeController.pieChartData.length > 0 && timeController.pieChartData[0][0] !== "No Data"
                                     function updateSlices() {
                                         if (!timeController || !timeController.pieChartData) {
-                                            console.log("Cannot update PieSeries: timeController or pieChartData is null")
+                                            //console.log("Cannot update PieSeries: timeController or pieChartData is null")
                                             return
                                         }
                                         pieSeries.clear()
                                         var data = timeController.pieChartData
-                                        console.log("Updating PieSeries with data length:", data.length)
+                                        //console.log("Updating PieSeries with data length:", data.length)
                                         for (var i = 0; i < data.length; i++) {
                                             var name = data[i][0]
                                             var hours = data[i][1]

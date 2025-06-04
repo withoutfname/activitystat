@@ -2,6 +2,7 @@ import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.15
 import QtQuick.Effects 2.15
+import QtQuick.Controls.Material 2.15
 
 Item {
     id: root
@@ -14,16 +15,15 @@ Item {
     property color cardColor: "#ffffff"
     property color borderColor: "#dfe6e9"
 
-    // Новые цвета для секций
-    property color section1Color: "#e0f7fa"  // Светло-голубой
-    property color section2Color: "#fce4ec"  // Светло-розовый
-    property color section3Color: "#e8f5e9"  // Светло-зелёный
-    property color section4Color: "#fffde7"  // Светло-жёлтый
-    property color section5Color: "#f3e5f5"  // Светло-фиолетовый
-    property color section6Color: "#e1f5fe"  // Светло-синий
-    property color section7Color: "#fff3e0"  // Светло-оранжевый
-    property color section8Color: "#f1f8e9"  // Светло-салатовый
-    property color section9Color: "#ffebee"  // Светло-красный
+    property color section1Color: "#e0f7fa"
+    property color section2Color: "#fce4ec"
+    property color section3Color: "#e8f5e9"
+    property color section4Color: "#fffde7"
+    property color section5Color: "#f3e5f5"
+    property color section6Color: "#e1f5fe"
+    property color section7Color: "#fff3e0"
+    property color section8Color: "#f1f8e9"
+    property color section9Color: "#ffebee"
 
     ScrollView {
         id: scrollView
@@ -33,9 +33,9 @@ Item {
         ColumnLayout {
             width: scrollView.width - 80
             anchors.margins: 20
-            spacing: 20            
+            spacing: 20
 
-            // Current Year
+            // Current Year with Dropdown
             Rectangle {
                 Layout.fillWidth: true
                 height: 80
@@ -57,23 +57,48 @@ Item {
                         anchors.margins: 25
 
                         Label {
-                            text: "📊 Current Year"
+                            text: "Current Year"
                             font.pixelSize: 20
                             font.bold: true
                             color: primaryColor
                         }
 
-                        Label {
-                            text: dashboardController ?
-                                  dashboardController.currentYear + " Summary" :
-                                  "Loading..."
-                            font.pixelSize: 16
-                            color: accentColor
+                        RowLayout {
+                            spacing: 10
+                            ComboBox {
+                                id: yearComboBox
+                                model: dashboardController.availableYears
+                                currentIndex: dashboardController.availableYears.indexOf(dashboardController.currentYear)
+                                onCurrentTextChanged: {
+                                    if (dashboardController && currentText) {
+                                        dashboardController.currentYear = parseInt(currentText)  // Прямое присваивание
+                                    }
+                                }
+                                enabled: dashboardController.availableYears.length > 0
+                                background: Rectangle {
+                                    color: "white"
+                                    border.color: root.accentColor
+                                    radius: 5
+                                }
+                                contentItem: Text {
+                                    text: yearComboBox.displayText || "No Year"
+                                    color: root.textColor || "#000000"
+                                    verticalAlignment: Text.AlignVCenter
+                                    leftPadding: 10
+                                }
+                            }
+
+                            Label {
+                                text: dashboardController.currentYear ? dashboardController.currentYear + " Summary" : "No Data"
+                                font.pixelSize: 16
+                                color: accentColor
+                            }
                         }
                     }
                 }
             }
 
+            // General Gaming Metrics
             // General Gaming Metrics
             Rectangle {
                 Layout.fillWidth: true
@@ -96,7 +121,7 @@ Item {
                         anchors.margins: 25
 
                         Label {
-                            text: "🎲 General Gaming Metrics"
+                            text: "General Gaming Metrics"
                             font.pixelSize: 20
                             font.bold: true
                             color: primaryColor
@@ -104,21 +129,50 @@ Item {
 
                         ColumnLayout {
                             spacing: 5
-                            Label { text: dashboardController ? "Total playtime in " + dashboardController.currentYear : "Total playtime in Year"; color: textColor }
-                            Label { text: "Percentage of total playtime"; color: textColor }
-                            Label { text: "Number of gaming sessions"; color: textColor }
-                            Label { text: "Average session duration"; color: textColor }
-                            Label { text: "Percentage of active days"; color: textColor }
-                            Label { text: "Most active month"; color: textColor }
-                            Label { text: "Least active month"; color: textColor }
-                            Label { text: "Most active day of week"; color: textColor }
-                            Label { text: "Most active time of day"; color: textColor }
-                            Label { text: "Longest gaming day"; color: textColor }
+                            RowLayout {
+                                Label { text: "Total playtime: "; color: textColor }
+                                Label { text: dashboardController.yearStats.total_playtime || "N/A"; color: textColor; font.bold: true }
+                            }
+                            RowLayout {
+                                Label { text: "Percentage of total playtime: "; color: textColor }
+                                Label { text: dashboardController.yearStats.percentage_of_total || "N/A"; color: textColor; font.bold: true }
+                            }
+                            RowLayout {
+                                Label { text: "Number of gaming sessions: "; color: textColor }
+                                Label { text: dashboardController.yearStats.session_count || "N/A"; color: textColor; font.bold: true }
+                            }
+                            RowLayout {
+                                Label { text: "Average session duration: "; color: textColor }
+                                Label { text: dashboardController.yearStats.avg_session_duration || "N/A"; color: textColor; font.bold: true }
+                            }
+                            RowLayout {
+                                Label { text: "Percentage of active days: "; color: textColor }
+                                Label { text: dashboardController.yearStats.active_days_percentage || "N/A"; color: textColor; font.bold: true }
+                            }
+                            RowLayout {
+                                Label { text: "Most active month: "; color: textColor }
+                                Label { text: dashboardController.yearStats.most_active_month || "N/A"; color: textColor; font.bold: true }
+                            }
+                            RowLayout {
+                                Label { text: "Least active month: "; color: textColor }
+                                Label { text: dashboardController.yearStats.least_active_month || "N/A"; color: textColor; font.bold: true }
+                            }
+                            RowLayout {
+                                Label { text: "Most active day of week: "; color: textColor }
+                                Label { text: dashboardController.yearStats.most_active_day_of_week || "N/A"; color: textColor; font.bold: true }
+                            }
+                            RowLayout {
+                                Label { text: "Most active time of day: "; color: textColor }
+                                Label { text: dashboardController.yearStats.most_active_time_of_day || "N/A"; color: textColor; font.bold: true }
+                            }
+                            RowLayout {
+                                Label { text: "Longest gaming day: "; color: textColor }
+                                Label { text: dashboardController.yearStats.longest_gaming_day || "N/A"; color: textColor; font.bold: true }
+                            }
                         }
                     }
                 }
             }
-
             // Game Insights
             Rectangle {
                 Layout.fillWidth: true
@@ -141,7 +195,7 @@ Item {
                         anchors.margins: 25
 
                         Label {
-                            text: "🎮 Game Insights"
+                            text: "Game Insights"
                             font.pixelSize: 20
                             font.bold: true
                             color: primaryColor
@@ -180,7 +234,7 @@ Item {
                         anchors.margins: 25
 
                         Label {
-                            text: "📚 Genre Insights"
+                            text: "Genre Insights"
                             font.pixelSize: 20
                             font.bold: true
                             color: primaryColor
@@ -188,7 +242,7 @@ Item {
 
                         ColumnLayout {
                             spacing: 5
-                            Label { text: dashboardController ? "Main genre of " + dashboardController.currentYear : "Main genre of the year"; color: textColor }
+                            Label { text: dashboardController ? "Main genre of " + dashboardController.currentYear : "Main genre of Year"; color: textColor }
                             Label { text: "Percentage distribution by genres"; color: textColor }
                             Label { text: "Percentage of single vs multiplayer"; color: textColor }
                         }
@@ -212,13 +266,12 @@ Item {
                         GradientStop { position: 0.0; color: section6Color }
                         GradientStop { position: 1.0; color: Qt.lighter(section6Color, 1.2) }
                     }
-
                     ColumnLayout {
                         anchors.fill: parent
                         anchors.margins: 25
 
                         Label {
-                            text: "📅 Release Year Insights"
+                            text: "Release Year Insights"
                             font.pixelSize: 20
                             font.bold: true
                             color: primaryColor
@@ -256,7 +309,7 @@ Item {
                         anchors.margins: 25
 
                         Label {
-                            text: "🔥 Streaks and Sequences"
+                            text: "Streaks and Sequences"
                             font.pixelSize: 20
                             font.bold: true
                             color: primaryColor
@@ -294,7 +347,7 @@ Item {
                         anchors.margins: 25
 
                         Label {
-                            text: "💡 Fun Facts"
+                            text: "Fun Facts"
                             font.pixelSize: 20
                             font.bold: true
                             color: primaryColor
@@ -333,7 +386,7 @@ Item {
                         anchors.margins: 25
 
                         Label {
-                            text: "🧪 Experimental Ideas"
+                            text: "Experimental Ideas"
                             font.pixelSize: 20
                             font.bold: true
                             color: primaryColor

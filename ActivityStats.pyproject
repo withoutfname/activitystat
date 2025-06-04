@@ -3,7 +3,12 @@
         "main.py",
         "src/backend/database.py",
         "src/backend/repositories/__init__.py",
+
+         "src/backend/services/__init__.py",
         "src/backend/services/stats_service.py",
+        "src/backend/services/dashboard_service.py",
+
+
         "src/frontend/controllers/__init__.py",
         "src/frontend/controllers/dashboard_controller.py",
         "src/frontend/controllers/library_controller.py",
@@ -40,6 +45,7 @@
         "src/backend/repositories/streak_stats_repository.py",
         "src/backend/repositories/platform_stats_repository.py",
         "src/backend/repositories/overplayed_stats_repository.py",
-        "src/backend/services/dashboard_service.py"
+        "src/backend/repositories/day_of_week_repository.py"
+
     ]
 }
