@@ -291,15 +291,23 @@ Item {
 
                         ColumnLayout {
                             spacing: 5
-                            Label { text: dashboardController ? "Main genre of " + dashboardController.currentYear : "Main genre of Year"; color: textColor }
-                            Label { text: "Percentage distribution by genres"; color: textColor }
-                            Label { text: "Percentage of single vs multiplayer"; color: textColor }
+                            Label {
+                                text: dashboardController ? "Main genre of " + dashboardController.currentYear + ": " + dashboardController.yearStats.main_genre : "Main genre: N/A"
+                                color: textColor
+                            }
+                            Label {
+                                text: dashboardController ? "Genre distribution: " + dashboardController.yearStats.genre_distribution : "Genre distribution: N/A"
+                                color: textColor
+                            }
+                            Label {
+                                text: dashboardController ? "Single vs Multiplayer: " + dashboardController.yearStats.single_vs_multiplayer : "Single vs Multiplayer: N/A"
+                                color: textColor
+                            }
                         }
                     }
                 }
             }
 
-            // Release Year Insights
             Rectangle {
                 Layout.fillWidth: true
                 height: 150
@@ -328,9 +336,14 @@ Item {
 
                         ColumnLayout {
                             spacing: 5
-                            Label { text: "Percentage of playtime by release year"; color: textColor }
-                            Label { text: "Oldest game played"; color: textColor }
-                            Label { text: dashboardController ? "Percentage of playtime in " + dashboardController.currentYear + " games" : "Percentage of playtime in Year games"; color: textColor }
+                            Label {
+                                text: "Percentage of playtime by release year: " + dashboardController.yearStats.playtime_by_release_year || "N/A"
+                                color: textColor
+                            }
+                            Label {
+                                text: "Oldest game played: " + dashboardController.yearStats.oldest_game_played || "N/A"
+                                color: textColor
+                            }
                         }
                     }
                 }

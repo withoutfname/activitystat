@@ -25,8 +25,8 @@ ApplicationWindow {
         TabButton { text: "Dashboard" }
         TabButton { text: "Time" }
         TabButton { text: "Library" }
-        TabButton {text: "Favorite games"}
-        TabButton {text: "AI"}
+        TabButton { text: "Favorite games"}
+        TabButton { text: "AI"}
     }
 
     Loader {

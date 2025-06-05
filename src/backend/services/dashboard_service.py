@@ -5,6 +5,8 @@ class DashboardService:
     def __init__(self, db):
         self.game_stats_repo = GameStatsRepository(db)
         self.game_insights_repo = GameInsightsRepository(db)
+        self.genre_stats_repo = GenreStatsRepository(db)
+        self.release_year_stats_repo = ReleaseYearStatsRepository(db)
 
         '''
         self.time_stats_repo = TimeStatsRepository(db)
@@ -14,8 +16,6 @@ class DashboardService:
         self.day_of_week_stats_repo = DayOfWeekStatsRepository(db)
         self.time_of_day_stats_repo = TimeOfDayStatsRepository(db)
         self.max_session_stats_repo = MaxSessionStatsRepository(db)
-        self.genre_stats_repo = GenreStatsRepository(db)
-        self.release_year_stats_repo = ReleaseYearStatsRepository(db)
         self.streak_stats_repo = StreakStatsRepository(db)
         self.platform_stats_repo = PlatformStatsRepository(db)
         self.overplayed_stats_repo = OverplayedStatsRepository(db)
@@ -39,7 +39,7 @@ class DashboardService:
             'least_active_month': self.game_stats_repo.get_least_active_month_for_year(year),
             'most_active_day_of_week': self.game_stats_repo.get_most_active_day_of_week_for_year(year),
             'most_active_time_of_day': self.game_stats_repo.get_most_active_time_of_day_for_year(year),
-            'longest_gaming_day': self.game_stats_repo.get_longest_gaming_day_for_year(year)
+            'longest_gaming_day': self.game_stats_repo.get_longest_gaming_day_for_year(year),
         }
 
         # Добавляем инсайты по играм
@@ -50,6 +50,21 @@ class DashboardService:
             'unique_games_count': self.game_insights_repo.get_unique_games_count(year)
         }
         stats.update(game_insights)
+
+        # Добавляем инсайты по жанрам
+        genre_insights = {
+            'main_genre': self.genre_stats_repo.get_main_genre(year),
+            'genre_distribution': self.genre_stats_repo.get_genre_distribution(year),
+            'single_vs_multiplayer': self.genre_stats_repo.get_single_vs_multiplayer(year)
+        }
+        stats.update(genre_insights)
+
+        # Добавляем инсайты по годам выпуска
+        release_year_insights = {
+            'playtime_by_release_year': self.release_year_stats_repo.get_playtime_by_release_year(year),
+            'oldest_game_played': self.release_year_stats_repo.get_oldest_game_played(year)
+        }
+        stats.update(release_year_insights)
 
         # Форматируем данные для отображения
         formatted_stats = {
@@ -66,7 +81,12 @@ class DashboardService:
             'game_of_the_year': f"{stats['game_of_the_year']['game']}: {stats['game_of_the_year']['hours']} hours" if stats['game_of_the_year'] else "N/A",
             'top3_games_percentage': f"{stats['top3_games_percentage']['percentage']}% in {', '.join([g['game'] for g in stats['top3_games_percentage']['games']])}" if stats['top3_games_percentage']['games'] else "N/A",
             'new_releases_percentage': f"{stats['new_releases_percentage']['percentage']}% in {', '.join([g['game'] for g in stats['new_releases_percentage']['games']])}" if stats['new_releases_percentage']['games'] else "N/A",
-            'unique_games_count': str(stats['unique_games_count'])
+            'unique_games_count': str(stats['unique_games_count']),
+            'main_genre': f"{stats['main_genre']['genre']}: {stats['main_genre']['hours']} hours" if stats['main_genre'] else "N/A",
+            'genre_distribution': ', '.join([f"{g['genre']}: {g['percentage']}%" for g in stats['genre_distribution']]) if stats['genre_distribution'] else "N/A",
+            'single_vs_multiplayer': f"Singleplayer: {stats['single_vs_multiplayer']['singleplayer']}%, Multiplayer: {stats['single_vs_multiplayer']['multiplayer']}%" if stats['single_vs_multiplayer'] else "N/A",
+            'playtime_by_release_year': f"{year}: {stats['playtime_by_release_year']['selected_year']}%, {year-1}: {stats['playtime_by_release_year']['previous_year']}%, Older: {stats['playtime_by_release_year']['older_years']}%" if stats['playtime_by_release_year'] else "N/A",
+            'oldest_game_played': f"{stats['oldest_game_played']['alias']} ({stats['oldest_game_played']['year']})" if stats['oldest_game_played'] else "N/A"
         }
 
         return formatted_stats
