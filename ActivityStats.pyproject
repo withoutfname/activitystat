@@ -3,12 +3,9 @@
         "main.py",
         "src/backend/database.py",
         "src/backend/repositories/__init__.py",
-
-         "src/backend/services/__init__.py",
+        "src/backend/services/__init__.py",
         "src/backend/services/stats_service.py",
         "src/backend/services/dashboard_service.py",
-
-
         "src/frontend/controllers/__init__.py",
         "src/frontend/controllers/dashboard_controller.py",
         "src/frontend/controllers/library_controller.py",
@@ -31,7 +28,7 @@
         "resources/app_icons/59_icon.jpg",
         "resources/app_icons/61_icon.jpg",
         "resources/app_icons/64_icon.jpg",
-        "resources/app_icons/72_icon.jpg",
+        "resources/app_icons/74_icon.jpg",
         "src/backend/repositories/yeartime_stats_repository.py",
         "src/backend/repositories/session_stats_repository.py",
         "src/backend/repositories/day_stats_repository.py",
@@ -45,7 +42,7 @@
         "src/backend/repositories/streak_stats_repository.py",
         "src/backend/repositories/platform_stats_repository.py",
         "src/backend/repositories/overplayed_stats_repository.py",
-        "src/backend/repositories/day_of_week_repository.py"
-
+        "src/backend/repositories/day_of_week_repository.py",
+        "src/backend/repositories/game_insights_repository.py"
     ]
 }

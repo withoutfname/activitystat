@@ -26,22 +26,16 @@ Item {
         running: true
         onTriggered: {
             if (timeController) {
-                //console.dashbo("timeController is ready, initializing...")
+                console.log("timeController is ready, initializing...")
                 rangeSlider.first.value = 0
                 rangeSlider.second.value = timeController.maxIntervalDays
                 timeController.setIntervalRange(0, timeController.maxIntervalDays)
                 controllerReady = true
-                pieSeries.updateSlices() // Явное обновление PieSeries при готовности
             } else {
-                //console.log("timeController is still not available, retrying...")
+                console.log("timeController is still not available, retrying...")
                 initTimer.restart()
             }
         }
-    }
-
-    Component.onCompleted: {
-        //console.log("time.qml loaded, triggering pieSeries update")
-        if (controllerReady) pieSeries.updateSlices()
     }
 
     ColumnLayout {
@@ -356,10 +350,11 @@ Item {
 
                             // Топ игр (левая часть)
                             Rectangle {
-                                Layout.fillWidth: true
+                                Layout.fillWidth : true
                                 height: 386
                                 color: section2Color
                                 radius: 8
+
 
                                 ColumnLayout {
                                     anchors.fill: parent
@@ -419,9 +414,9 @@ Item {
                                 }
                             }
 
-                            // Круговая диаграмма (правая часть)
+                            // Круговая диаграмма (левая часть)
                             ChartView {
-                                width: 900
+                                Layout.preferredWidth: 900
                                 height: 400
                                 antialiasing: true
                                 backgroundColor: section2Color
@@ -435,12 +430,11 @@ Item {
                                     visible: controllerReady && timeController && timeController.pieChartData && timeController.pieChartData.length > 0 && timeController.pieChartData[0][0] !== "No Data"
                                     function updateSlices() {
                                         if (!timeController || !timeController.pieChartData) {
-                                            //console.log("Cannot update PieSeries: timeController or pieChartData is null")
+                                            console.log("Cannot update PieSeries: timeController or pieChartData is null")
                                             return
                                         }
                                         pieSeries.clear()
                                         var data = timeController.pieChartData
-                                        //console.log("Updating PieSeries with data length:", data.length)
                                         for (var i = 0; i < data.length; i++) {
                                             var name = data[i][0]
                                             var hours = data[i][1]
@@ -453,7 +447,7 @@ Item {
                                             pieSeries.at(i).labelFont.pixelSize = 10
                                             pieSeries.at(i).labelArmLengthFactor = 0.3
                                             pieSeries.at(i).labelVisible = true
-                                            pieSeries.at(i).borderWidth =  1
+                                            pieSeries.at(i).borderWidth = 1
                                             pieSeries.at(i).borderColor = "black"
                                         }
                                     }
@@ -467,7 +461,7 @@ Item {
                                     Connections {
                                         target: timeController
                                         function onIntervalChanged() {
-                                            updateSlices()
+                                            pieSeries.updateSlices()
                                         }
                                     }
                                 }

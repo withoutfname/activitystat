@@ -21,4 +21,5 @@ from .release_year_stats_repository import ReleaseYearStatsRepository
 from .streak_stats_repository import StreakStatsRepository
 from .platform_stats_repository import PlatformStatsRepository
 from .overplayed_stats_repository import OverplayedStatsRepository
+from .game_insights_repository import GameInsightsRepository
 

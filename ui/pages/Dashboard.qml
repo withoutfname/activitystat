@@ -174,9 +174,10 @@ Item {
                 }
             }
             // Game Insights
+            // Game Insights
             Rectangle {
                 Layout.fillWidth: true
-                height: 180
+                height: 220
                 color: "transparent"
                 radius: 12
 
@@ -203,10 +204,58 @@ Item {
 
                         ColumnLayout {
                             spacing: 5
-                            Label { text: dashboardController ? "Game of the " + dashboardController.currentYear : "Game of the Year"; color: textColor }
-                            Label { text: "Percentage of time in top 3 games"; color: textColor }
-                            Label { text: dashboardController ? "Percentage of time in " + dashboardController.currentYear + " releases" : "Percentage of time in Year releases"; color: textColor }
-                            Label { text: "Number of different games played"; color: textColor }
+                            Row {
+                                spacing: 5
+                                Label {
+                                    text: dashboardController ? "Игра года " + dashboardController.currentYear + ":" : "Игра года:"
+                                    color: textColor
+                                }
+                                Label {
+                                    text: dashboardController ? dashboardController.yearStats.game_of_the_year : "N/A"
+                                    color: textColor
+                                    font.bold: true
+                                }
+                            }
+                            Row {
+                                spacing: 5
+                                Label {
+                                    text: "Процент времени в топ-3 играх:"
+                                    color: textColor
+                                }
+                                Label {
+                                    text: dashboardController ? dashboardController.yearStats.top3_games_percentage : "N/A"
+                                    color: textColor
+                                    font.bold: true
+                                    wrapMode: Text.WordWrap
+                                    Layout.maximumWidth: parent.width - 150
+                                }
+                            }
+                            Row {
+                                spacing: 5
+                                Label {
+                                    text: dashboardController ? "Процент времени в новинках " + dashboardController.currentYear + " года:" : "Процент времени в новинках года:"
+                                    color: textColor
+                                }
+                                Label {
+                                    text: dashboardController ? dashboardController.yearStats.new_releases_percentage : "N/A"
+                                    color: textColor
+                                    font.bold: true
+                                    wrapMode: Text.WordWrap
+                                    Layout.maximumWidth: parent.width - 150
+                                }
+                            }
+                            Row {
+                                spacing: 5
+                                Label {
+                                    text: "Количество уникальных игр:"
+                                    color: textColor
+                                }
+                                Label {
+                                    text: dashboardController ? dashboardController.yearStats.unique_games_count : "N/A"
+                                    color: textColor
+                                    font.bold: true
+                                }
+                            }
                         }
                     }
                 }
