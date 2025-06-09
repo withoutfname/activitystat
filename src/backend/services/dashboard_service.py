@@ -7,6 +7,9 @@ class DashboardService:
         self.game_insights_repo = GameInsightsRepository(db)
         self.genre_stats_repo = GenreStatsRepository(db)
         self.release_year_stats_repo = ReleaseYearStatsRepository(db)
+        self.streak_stats_repo = StreakStatsRepository(db)
+        self.fun_facts_repo = FunFactsRepository(db)
+        self.exp_stats_repo = ExpStatsRepository(db)
 
         '''
         self.time_stats_repo = TimeStatsRepository(db)
@@ -16,7 +19,6 @@ class DashboardService:
         self.day_of_week_stats_repo = DayOfWeekStatsRepository(db)
         self.time_of_day_stats_repo = TimeOfDayStatsRepository(db)
         self.max_session_stats_repo = MaxSessionStatsRepository(db)
-        self.streak_stats_repo = StreakStatsRepository(db)
         self.platform_stats_repo = PlatformStatsRepository(db)
         self.overplayed_stats_repo = OverplayedStatsRepository(db)
         '''
@@ -66,6 +68,25 @@ class DashboardService:
         }
         stats.update(release_year_insights)
 
+        # Добавляем данные о стриках
+        streak_insights = {
+            'longest_gaming_streak': self.streak_stats_repo.get_longest_gaming_streak_in_year(year),
+            'longest_game_streak': self.streak_stats_repo.get_longest_game_streak_in_year(year),
+            'longest_break': self.streak_stats_repo.get_longest_break_in_year(year)
+        }
+        stats.update(streak_insights)
+
+        fun_facts = {
+            'platform_distribution': self.fun_facts_repo.get_platform_distribution(year),
+            'games_played_one_day': self.fun_facts_repo.get_games_played_one_day(year)
+        }
+        stats.update(fun_facts)
+
+        exp_stats = {
+            'overplayed_time_stats': self.exp_stats_repo.get_overplayed_time_percentage_in_year(year)
+        }
+        stats.update(exp_stats)
+
         # Форматируем данные для отображения
         formatted_stats = {
             'total_playtime': f"{stats['total_playtime']} hours",
@@ -86,7 +107,13 @@ class DashboardService:
             'genre_distribution': ', '.join([f"{g['genre']}: {g['percentage']}%" for g in stats['genre_distribution']]) if stats['genre_distribution'] else "N/A",
             'single_vs_multiplayer': f"Singleplayer: {stats['single_vs_multiplayer']['singleplayer']}%, Multiplayer: {stats['single_vs_multiplayer']['multiplayer']}%" if stats['single_vs_multiplayer'] else "N/A",
             'playtime_by_release_year': f"{year}: {stats['playtime_by_release_year']['selected_year']}%, {year-1}: {stats['playtime_by_release_year']['previous_year']}%, Older: {stats['playtime_by_release_year']['older_years']}%" if stats['playtime_by_release_year'] else "N/A",
-            'oldest_game_played': f"{stats['oldest_game_played']['alias']} ({stats['oldest_game_played']['year']})" if stats['oldest_game_played'] else "N/A"
+            'oldest_game_played': f"{stats['oldest_game_played']['alias']} ({stats['oldest_game_played']['year']})" if stats['oldest_game_played'] else "N/A",
+            'longest_gaming_streak': f"{stats['longest_gaming_streak']['length']} days, from {stats['longest_gaming_streak']['start_date']} to {stats['longest_gaming_streak']['end_date']}" if stats['longest_gaming_streak']['length'] > 0 else "N/A",
+            'longest_game_streak': f"{stats['longest_game_streak']['game']} - {stats['longest_game_streak']['length']} days, from {stats['longest_game_streak']['start_date']} to {stats['longest_game_streak']['end_date']}" if stats['longest_game_streak']['length'] > 0 else "N/A",
+            'longest_break': f"{stats['longest_break']['length']} days, from {stats['longest_break']['start_date']} to {stats['longest_break']['end_date']}" if stats['longest_break']['length'] > 0 else "N/A",
+            'platform_distribution': f"Xbox: {stats['platform_distribution']['xbox']}%, Steam: {stats['platform_distribution']['steam']}%, Other: {stats['platform_distribution']['other']}%" if stats['platform_distribution'] else "N/A",
+            'games_played_one_day': f"Total: {len(stats['games_played_one_day'][0])} games - {', '.join(stats['games_played_one_day'][0])}" if stats['games_played_one_day'] and stats['games_played_one_day'][0] else "N/A",
+            'overplayed_time_stats': f"{stats['overplayed_time_stats']['percentage']}% ({stats['overplayed_time_stats']['overplayed_count']} sessions)" if stats['overplayed_time_stats'] else "N/A"
         }
 
         return formatted_stats

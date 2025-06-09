@@ -8,18 +8,11 @@ from .day_of_week_repository import DayOfWeekRepository
 from .time_of_day_repository import TimeOfDayRepository
 from .consecutive_days_repository import ConsecutiveDaysRepository
 
-from .yeartime_stats_repository import YearTimeStatsRepository
-from .session_stats_repository import SessionStatsRepository
-from .day_stats_repository import DayStatsRepository
-from .month_stats_repository import MonthStatsRepository
-from .day_of_week_stats_repository import DayOfWeekStatsRepository
-from .time_of_day_stats_repository import TimeOfDayStatsRepository
-from .max_session_stats_repository import MaxSessionStatsRepository
 from .game_stats_repository import GameStatsRepository
 from .genre_stats_repository import GenreStatsRepository
 from .release_year_stats_repository import ReleaseYearStatsRepository
 from .streak_stats_repository import StreakStatsRepository
-from .platform_stats_repository import PlatformStatsRepository
-from .overplayed_stats_repository import OverplayedStatsRepository
 from .game_insights_repository import GameInsightsRepository
+from .fun_facts_repository import FunFactsRepository
+from .exp_stats_repository import ExpStatsRepository
 

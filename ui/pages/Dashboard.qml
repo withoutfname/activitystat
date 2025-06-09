@@ -99,7 +99,6 @@ Item {
             }
 
             // General Gaming Metrics
-            // General Gaming Metrics
             Rectangle {
                 Layout.fillWidth: true
                 height: 300
@@ -173,7 +172,6 @@ Item {
                     }
                 }
             }
-            // Game Insights
             // Game Insights
             Rectangle {
                 Layout.fillWidth: true
@@ -308,6 +306,7 @@ Item {
                 }
             }
 
+            //Release Year Insights
             Rectangle {
                 Layout.fillWidth: true
                 height: 150
@@ -379,9 +378,18 @@ Item {
 
                         ColumnLayout {
                             spacing: 5
-                            Label { text: "Longest streak of gaming days"; color: textColor }
-                            Label { text: "Longest streak for a game"; color: textColor }
-                            Label { text: "Longest break between gaming days"; color: textColor }
+                            Label {
+                                text: "Longest streak of gaming days: " + dashboardController.yearStats.longest_gaming_streak || "N/A"
+                                color: textColor
+                            }
+                            Label {
+                                text: "Longest streak for a game: " + dashboardController.yearStats.longest_game_streak || "N/A"
+                                color: textColor
+                            }
+                            Label {
+                                text: "Longest break between gaming days: " + dashboardController.yearStats.longest_break || "N/A"
+                                color: textColor
+                            }
                         }
                     }
                 }
@@ -389,8 +397,9 @@ Item {
 
             // Fun Facts
             Rectangle {
+                id: funFactsRect
                 Layout.fillWidth: true
-                height: 180
+                Layout.preferredHeight: contentColumn.implicitHeight + 50 // Динамическая высота
                 color: "transparent"
                 radius: 12
 
@@ -400,11 +409,12 @@ Item {
                     anchors.fill: parent
                     radius: 12
                     gradient: Gradient {
-                        GradientStop { position: 0.0; color: section8Color }
-                        GradientStop { position: 1.0; color: Qt.lighter(section8Color, 1.2) }
+                        GradientStop { position: 0.0; color: section7Color }
+                        GradientStop { position: 1.0; color: Qt.lighter(section7Color, 1.2) }
                     }
 
                     ColumnLayout {
+                        id: contentColumn
                         anchors.fill: parent
                         anchors.margins: 25
 
@@ -417,14 +427,77 @@ Item {
 
                         ColumnLayout {
                             spacing: 5
-                            Label { text: "Percentage of playtime on Xbox"; color: textColor }
-                            Label { text: "Percentage of playtime on Steam"; color: textColor }
-                            Label { text: "Percentage of playtime on other platforms"; color: textColor }
-                            Label { text: "Game played for only one day"; color: textColor }
+                            Label {
+                                text: "Platform Distribution: " + (dashboardController.yearStats.platform_distribution || "N/A")
+                                color: textColor
+                                wrapMode: Text.WordWrap
+                            }
+                            RowLayout {
+                                spacing: 5
+                                Label {
+                                    id: gamesCountLabel
+                                    text: "Games Played One Day: " + (dashboardController.yearStats.games_played_one_day || "N/A").split(" - ")[0]
+                                    color: textColor
+                                    wrapMode: Text.WordWrap
+                                }
+                                Label {
+                                    text: "▼"
+                                    id: arrowLabel
+                                    color: textColor
+                                    font.pixelSize: 12
+                                    MouseArea {
+                                        anchors.fill: parent
+                                        onClicked: {
+                                            gameList.visible = !gameList.visible
+                                            if (gameList.visible) {
+                                                // Вычисляем новую высоту с учетом количества игр (30 пикселей на игру)
+                                                var gameCount = gameRepeater.model.length || 0
+                                                var newHeight = contentColumn.implicitHeight + (gameCount * 30)
+                                                heightAnimation.to = newHeight
+                                                heightAnimation.start()
+                                            } else {
+                                                heightAnimation.to = 150 // Возвращаемся к исходной высоте
+                                                heightAnimation.start()
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                            ColumnLayout {
+                                id: gameList
+                                visible: false // Список скрыт по умолчанию
+                                spacing: 2
+                                Repeater {
+                                    id: gameRepeater
+                                    model: (dashboardController.yearStats.games_played_one_day || "N/A").includes("Total") ?
+                                           (dashboardController.yearStats.games_played_one_day || "").split(" - ")[1].split(", ") : []
+                                    delegate: Label {
+                                        text: modelData
+                                        color: textColor
+                                        font.pixelSize: 12
+                                        wrapMode: Text.WordWrap
+                                        padding: 2
+                                    }
+                                }
+                            }
                         }
                     }
                 }
+
+                // Анимация изменения высоты
+                NumberAnimation {
+                    id: heightAnimation
+                    target: funFactsRect
+                    property: "Layout.preferredHeight"
+                    duration: 200
+                    easing.type: Easing.OutQuad
+                    to: 150 // Начальная высота
+                    running: false
+                }
             }
+
+
+
 
             // Experimental Ideas
             Rectangle {
@@ -456,7 +529,11 @@ Item {
 
                         ColumnLayout {
                             spacing: 5
-                            Label { text: "Percentage of overplayed time"; color: textColor }
+                            Label {
+                                text: "Percentage of overplayed time: " + (dashboardController.yearStats.overplayed_time_stats || "N/A")
+                                color: textColor
+                                wrapMode: Text.WordWrap
+                            }
                         }
                     }
                 }
