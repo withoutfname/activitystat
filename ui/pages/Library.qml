@@ -206,7 +206,7 @@ Item {
                         }
 
                         MouseArea {
-                            anchors.fill: hoverInfo
+                            anchors.fill: parent // Изменено с hoverInfo на parent (вся карточка)
                             hoverEnabled: true
                             onEntered: {
                                 card.color = "#f0f0f0"
@@ -216,12 +216,16 @@ Item {
                             onExited: {
                                 card.color = "white"
                                 hoverInfo.visible = false
-                                buttonRow.visible = true
-
+                                buttonRow.visible = false // Изменено с true на false
                             }
+
+                            // Добавлено для предотвращения блокировки кликов по кнопкам
+                            propagateComposedEvents: true
+                            acceptedButtons: Qt.NoButton // Мы не обрабатываем клики, только ховер
                         }
                     }
                 }
+
             }
         }
     }

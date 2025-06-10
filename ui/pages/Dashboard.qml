@@ -67,14 +67,14 @@ Item {
                             spacing: 10
                             ComboBox {
                                 id: yearComboBox
-                                model: dashboardController.availableYears
-                                currentIndex: dashboardController.availableYears.indexOf(dashboardController.currentYear)
+                                model: dashboardController ? dashboardController.availableYears : []
+                                currentIndex: dashboardController && dashboardController.availableYears ? dashboardController.availableYears.indexOf(dashboardController.currentYear) : -1
                                 onCurrentTextChanged: {
                                     if (dashboardController && currentText) {
-                                        dashboardController.currentYear = parseInt(currentText)  // Прямое присваивание
+                                        dashboardController.currentYear = parseInt(currentText)
                                     }
                                 }
-                                enabled: dashboardController.availableYears.length > 0
+                                enabled: dashboardController && dashboardController.availableYears && dashboardController.availableYears.length > 0
                                 background: Rectangle {
                                     color: "white"
                                     border.color: root.accentColor
@@ -89,7 +89,7 @@ Item {
                             }
 
                             Label {
-                                text: dashboardController.currentYear ? dashboardController.currentYear + " Summary" : "No Data"
+                                text: dashboardController && dashboardController.currentYear ? dashboardController.currentYear + " Summary" : "No Data"
                                 font.pixelSize: 16
                                 color: accentColor
                             }
@@ -98,7 +98,6 @@ Item {
                 }
             }
 
-            // General Gaming Metrics
             // General Gaming Metrics
             Rectangle {
                 Layout.fillWidth: true
@@ -131,48 +130,49 @@ Item {
                             spacing: 5
                             RowLayout {
                                 Label { text: "Total playtime: "; color: textColor }
-                                Label { text: dashboardController.yearStats.total_playtime || "N/A"; color: textColor; font.bold: true }
+                                Label { text: dashboardController && dashboardController.yearStats ? dashboardController.yearStats.total_playtime || "N/A" : "N/A"; color: textColor }
                             }
                             RowLayout {
                                 Label { text: "Percentage of total playtime: "; color: textColor }
-                                Label { text: dashboardController.yearStats.percentage_of_total || "N/A"; color: textColor; font.bold: true }
+                                Label { text: dashboardController && dashboardController.yearStats ? dashboardController.yearStats.percentage_of_total || "N/A" : "N/A"; color: textColor }
                             }
                             RowLayout {
                                 Label { text: "Number of gaming sessions: "; color: textColor }
-                                Label { text: dashboardController.yearStats.session_count || "N/A"; color: textColor; font.bold: true }
+                                Label { text: dashboardController && dashboardController.yearStats ? dashboardController.yearStats.session_count || "N/A" : "N/A"; color: textColor }
                             }
                             RowLayout {
                                 Label { text: "Average session duration: "; color: textColor }
-                                Label { text: dashboardController.yearStats.avg_session_duration || "N/A"; color: textColor; font.bold: true }
+                                Label { text: dashboardController && dashboardController.yearStats ? dashboardController.yearStats.avg_session_duration || "N/A" : "N/A"; color: textColor }
                             }
                             RowLayout {
                                 Label { text: "Percentage of active days: "; color: textColor }
-                                Label { text: dashboardController.yearStats.active_days_percentage || "N/A"; color: textColor; font.bold: true }
+                                Label { text: dashboardController && dashboardController.yearStats ? dashboardController.yearStats.active_days_percentage || "N/A" : "N/A"; color: textColor }
                             }
                             RowLayout {
                                 Label { text: "Most active month: "; color: textColor }
-                                Label { text: dashboardController.yearStats.most_active_month || "N/A"; color: textColor; font.bold: true }
+                                Label { text: dashboardController && dashboardController.yearStats ? dashboardController.yearStats.most_active_month || "N/A" : "N/A"; color: textColor }
                             }
                             RowLayout {
                                 Label { text: "Least active month: "; color: textColor }
-                                Label { text: dashboardController.yearStats.least_active_month || "N/A"; color: textColor; font.bold: true }
+                                Label { text: dashboardController && dashboardController.yearStats ? dashboardController.yearStats.least_active_month || "N/A" : "N/A"; color: textColor }
                             }
                             RowLayout {
                                 Label { text: "Most active day of week: "; color: textColor }
-                                Label { text: dashboardController.yearStats.most_active_day_of_week || "N/A"; color: textColor; font.bold: true }
+                                Label { text: dashboardController && dashboardController.yearStats ? dashboardController.yearStats.most_active_day_of_week || "N/A" : "N/A"; color: textColor }
                             }
                             RowLayout {
                                 Label { text: "Most active time of day: "; color: textColor }
-                                Label { text: dashboardController.yearStats.most_active_time_of_day || "N/A"; color: textColor; font.bold: true }
+                                Label { text: dashboardController && dashboardController.yearStats ? dashboardController.yearStats.most_active_time_of_day || "N/A" : "N/A"; color: textColor }
                             }
                             RowLayout {
                                 Label { text: "Longest gaming day: "; color: textColor }
-                                Label { text: dashboardController.yearStats.longest_gaming_day || "N/A"; color: textColor; font.bold: true }
+                                Label { text: dashboardController && dashboardController.yearStats ? dashboardController.yearStats.longest_gaming_day || "N/A" : "N/A"; color: textColor }
                             }
                         }
                     }
                 }
             }
+
             // Game Insights
             Rectangle {
                 Layout.fillWidth: true
@@ -206,13 +206,12 @@ Item {
                             Row {
                                 spacing: 5
                                 Label {
-                                    text: dashboardController ? "Игра года " + dashboardController.currentYear + ":" : "Игра года:"
+                                    text: dashboardController ? "Игра года " + (dashboardController.currentYear || "") + ":" : "Игра года:"
                                     color: textColor
                                 }
                                 Label {
-                                    text: dashboardController ? dashboardController.yearStats.game_of_the_year : "N/A"
+                                    text: dashboardController && dashboardController.yearStats ? dashboardController.yearStats.game_of_the_year || "N/A" : "N/A"
                                     color: textColor
-                                    font.bold: true
                                 }
                             }
                             Row {
@@ -222,9 +221,8 @@ Item {
                                     color: textColor
                                 }
                                 Label {
-                                    text: dashboardController ? dashboardController.yearStats.top3_games_percentage : "N/A"
+                                    text: dashboardController && dashboardController.yearStats ? dashboardController.yearStats.top3_games_percentage || "N/A" : "N/A"
                                     color: textColor
-                                    font.bold: true
                                     wrapMode: Text.WordWrap
                                     Layout.maximumWidth: parent.width - 150
                                 }
@@ -232,13 +230,12 @@ Item {
                             Row {
                                 spacing: 5
                                 Label {
-                                    text: dashboardController ? "Процент времени в новинках " + dashboardController.currentYear + " года:" : "Процент времени в новинках года:"
+                                    text: dashboardController ? "Процент времени в новинках " + (dashboardController.currentYear || "") + " года:" : "Процент времени в новинках года:"
                                     color: textColor
                                 }
                                 Label {
-                                    text: dashboardController ? dashboardController.yearStats.new_releases_percentage : "N/A"
+                                    text: dashboardController && dashboardController.yearStats ? dashboardController.yearStats.new_releases_percentage || "N/A" : "N/A"
                                     color: textColor
-                                    font.bold: true
                                     wrapMode: Text.WordWrap
                                     Layout.maximumWidth: parent.width - 150
                                 }
@@ -250,9 +247,8 @@ Item {
                                     color: textColor
                                 }
                                 Label {
-                                    text: dashboardController ? dashboardController.yearStats.unique_games_count : "N/A"
+                                    text: dashboardController && dashboardController.yearStats ? dashboardController.yearStats.unique_games_count || "N/A" : "N/A"
                                     color: textColor
-                                    font.bold: true
                                 }
                             }
                         }
@@ -291,15 +287,15 @@ Item {
                         ColumnLayout {
                             spacing: 5
                             Label {
-                                text: dashboardController ? "Main genre of " + dashboardController.currentYear + ": " + dashboardController.yearStats.main_genre : "Main genre: N/A"
+                                text: dashboardController && dashboardController.currentYear && dashboardController.yearStats ? "Main genre of " + dashboardController.currentYear + ": " + dashboardController.yearStats.main_genre : "Main genre: N/A"
                                 color: textColor
                             }
                             Label {
-                                text: dashboardController ? "Genre distribution: " + dashboardController.yearStats.genre_distribution : "Genre distribution: N/A"
+                                text: dashboardController && dashboardController.yearStats ? "Genre distribution: " + dashboardController.yearStats.genre_distribution : "Genre distribution: N/A"
                                 color: textColor
                             }
                             Label {
-                                text: dashboardController ? "Single vs Multiplayer: " + dashboardController.yearStats.single_vs_multiplayer : "Single vs Multiplayer: N/A"
+                                text: dashboardController && dashboardController.yearStats ? "Single vs Multiplayer: " + dashboardController.yearStats.single_vs_multiplayer : "Single vs Multiplayer: N/A"
                                 color: textColor
                             }
                         }
@@ -307,7 +303,7 @@ Item {
                 }
             }
 
-            //Release Year Insights
+            // Release Year Insights
             Rectangle {
                 Layout.fillWidth: true
                 height: 150
@@ -337,11 +333,11 @@ Item {
                         ColumnLayout {
                             spacing: 5
                             Label {
-                                text: "Percentage of playtime by release year: " + dashboardController.yearStats.playtime_by_release_year || "N/A"
+                                text: dashboardController && dashboardController.yearStats ? "Percentage of playtime by release year: " + dashboardController.yearStats.playtime_by_release_year : "N/A"
                                 color: textColor
                             }
                             Label {
-                                text: "Oldest game played: " + dashboardController.yearStats.oldest_game_played || "N/A"
+                                text: dashboardController && dashboardController.yearStats ? "Oldest game played: " + dashboardController.yearStats.oldest_game_played : "N/A"
                                 color: textColor
                             }
                         }
@@ -380,15 +376,15 @@ Item {
                         ColumnLayout {
                             spacing: 5
                             Label {
-                                text: "Longest streak of gaming days: " + dashboardController.yearStats.longest_gaming_streak || "N/A"
+                                text: dashboardController && dashboardController.yearStats ? "Longest streak of gaming days: " + dashboardController.yearStats.longest_gaming_streak : "N/A"
                                 color: textColor
                             }
                             Label {
-                                text: "Longest streak for a game: " + dashboardController.yearStats.longest_game_streak || "N/A"
+                                text: dashboardController && dashboardController.yearStats ? "Longest streak for a game: " + dashboardController.yearStats.longest_game_streak : "N/A"
                                 color: textColor
                             }
                             Label {
-                                text: "Longest break between gaming days: " + dashboardController.yearStats.longest_break || "N/A"
+                                text: dashboardController && dashboardController.yearStats ? "Longest break between gaming days: " + dashboardController.yearStats.longest_break : "N/A"
                                 color: textColor
                             }
                         }
@@ -396,12 +392,11 @@ Item {
                 }
             }
 
-
             // Fun Facts
             Rectangle {
                 id: funFactsRect
                 Layout.fillWidth: true
-                Layout.preferredHeight: contentColumn.implicitHeight + 50 // Динамическая высота
+                Layout.preferredHeight: contentColumn.implicitHeight + 50 // Dynamic height
                 color: "transparent"
                 radius: 12
 
@@ -430,7 +425,7 @@ Item {
                         ColumnLayout {
                             spacing: 5
                             Label {
-                                text: "Platform Distribution: " + (dashboardController.yearStats.platform_distribution || "N/A")
+                                text: dashboardController && dashboardController.yearStats ? "Platform Distribution: " + dashboardController.yearStats.platform_distribution : "N/A"
                                 color: textColor
                                 wrapMode: Text.WordWrap
                             }
@@ -438,27 +433,28 @@ Item {
                                 spacing: 5
                                 Label {
                                     id: gamesCountLabel
-                                    text: "Games Played One Day: " + (dashboardController.yearStats.games_played_one_day || "N/A").split(" - ")[0]
+                                    text: dashboardController && dashboardController.yearStats ? "Games Played One Day: " + (dashboardController.yearStats.games_played_one_day || "N/A").split(" - ")[0] : "N/A"
                                     color: textColor
                                     wrapMode: Text.WordWrap
                                 }
                                 Label {
-                                    text: "▼"
                                     id: arrowLabel
+                                    text: "▼"
                                     color: textColor
                                     font.pixelSize: 12
                                     MouseArea {
+                                        id: expandMouseArea
                                         anchors.fill: parent
+                                        enabled: dashboardController && dashboardController.yearStats && gameRepeater.model.length > 0
                                         onClicked: {
                                             gameList.visible = !gameList.visible
                                             if (gameList.visible) {
-                                                // Вычисляем новую высоту с учетом количества игр (30 пикселей на игру)
                                                 var gameCount = gameRepeater.model.length || 0
                                                 var newHeight = contentColumn.implicitHeight + (gameCount * 30)
                                                 heightAnimation.to = newHeight
                                                 heightAnimation.start()
                                             } else {
-                                                heightAnimation.to = 150 // Возвращаемся к исходной высоте
+                                                heightAnimation.to = 150
                                                 heightAnimation.start()
                                             }
                                         }
@@ -467,14 +463,14 @@ Item {
                             }
                             ColumnLayout {
                                 id: gameList
-                                visible: false // Список скрыт по умолчанию
+                                visible: false
                                 spacing: 2
                                 Repeater {
                                     id: gameRepeater
-                                    model: (dashboardController.yearStats.games_played_one_day || "N/A").includes("Total") ?
-                                           (dashboardController.yearStats.games_played_one_day || "").split(" - ")[1].split(", ") : []
+                                    model: dashboardController && dashboardController.yearStats && (dashboardController.yearStats.games_played_one_day || "N/A").includes("Total") ?
+                                           (dashboardController.yearStats.games_played_one_day || "").split(" - ")[1].split(/,\s*/) : []
                                     delegate: Label {
-                                        text: modelData
+                                        text: modelData || "N/A"
                                         color: textColor
                                         font.pixelSize: 12
                                         wrapMode: Text.WordWrap
@@ -486,14 +482,13 @@ Item {
                     }
                 }
 
-                // Анимация изменения высоты
                 NumberAnimation {
                     id: heightAnimation
                     target: funFactsRect
                     property: "Layout.preferredHeight"
                     duration: 200
                     easing.type: Easing.OutQuad
-                    to: 150 // Начальная высота
+                    to: 150
                     running: false
                 }
             }
@@ -529,7 +524,7 @@ Item {
                         ColumnLayout {
                             spacing: 5
                             Label {
-                                text: "Percentage of overplayed time: " + (dashboardController.yearStats.overplayed_time_stats || "N/A")
+                                text: dashboardController && dashboardController.yearStats ? "Percentage of overplayed time: " + dashboardController.yearStats.overplayed_time_stats : "N/A"
                                 color: textColor
                                 wrapMode: Text.WordWrap
                             }
@@ -537,9 +532,6 @@ Item {
                     }
                 }
             }
-
-
-
         }
     }
 }
