@@ -99,6 +99,7 @@ Item {
             }
 
             // General Gaming Metrics
+            // General Gaming Metrics
             Rectangle {
                 Layout.fillWidth: true
                 height: 300
@@ -395,6 +396,7 @@ Item {
                 }
             }
 
+
             // Fun Facts
             Rectangle {
                 id: funFactsRect
@@ -496,9 +498,6 @@ Item {
                 }
             }
 
-
-
-
             // Experimental Ideas
             Rectangle {
                 Layout.fillWidth: true
@@ -538,6 +537,9 @@ Item {
                     }
                 }
             }
+
+
+
         }
     }
 }

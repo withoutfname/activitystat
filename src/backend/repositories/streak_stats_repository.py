@@ -71,8 +71,8 @@ class StreakStatsRepository:
         result = self.db.cursor.fetchone()
         return {
             "length": result[0] if result else 0,
-            "start_date": result[1].strftime('%d.%m') if result else None,
-            "end_date": result[2].strftime('%d.%m') if result else None
+            "start_date": result[1].strftime('%d.%m') if result and result[1] else None,
+            "end_date": result[2].strftime('%d.%m') if result and result[2] else None
         } if result else {"length": 0, "start_date": None, "end_date": None}
 
     def get_longest_game_streak_in_year(self, year):
@@ -121,8 +121,8 @@ class StreakStatsRepository:
         return {
             "game": result[0] if result else None,
             "length": result[1] if result else 0,
-            "start_date": result[2].strftime('%d.%m') if result else None,
-            "end_date": result[3].strftime('%d.%m') if result else None
+            "start_date": result[2].strftime('%d.%m') if result and result[2] else None,
+            "end_date": result[3].strftime('%d.%m') if result and result[3] else None
         } if result else {"game": None, "length": 0, "start_date": None, "end_date": None}
 
     def get_longest_break_in_year(self, year):
@@ -184,8 +184,8 @@ class StreakStatsRepository:
         result = self.db.cursor.fetchone()
         return {
             "length": result[0] if result else 0,
-            "start_date": result[1].strftime('%d.%m') if result else None,
-            "end_date": result[2].strftime('%d.%m') if result else None
+            "start_date": result[1].strftime('%d.%m') if result and result[1] else None,
+            "end_date": result[2].strftime('%d.%m') if result and result[2] else None
         } if result else {"length": 0, "start_date": None, "end_date": None}
 
 if __name__ == "__main__":
@@ -197,7 +197,7 @@ if __name__ == "__main__":
         repo = StreakStatsRepository(db)
 
         # Тестируем для 2025 года
-        year = 2025
+        year = 2024
         print(f"\nTesting StreakStatsRepository for year {year}:\n")
 
         # Тест get_longest_gaming_streak_in_year
