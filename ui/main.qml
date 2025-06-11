@@ -16,7 +16,8 @@ ApplicationWindow {
     property var tabSources: [
         Qt.resolvedUrl("../ui/pages/Dashboard.qml").toString(),
         Qt.resolvedUrl("../ui/pages/Time.qml").toString(),
-        Qt.resolvedUrl("../ui/pages/Library.qml").toString()
+        Qt.resolvedUrl("../ui/pages/Library.qml").toString(),
+        Qt.resolvedUrl("../ui/pages/Favorite.qml").toString()
     ]
 
     header: TabBar {
