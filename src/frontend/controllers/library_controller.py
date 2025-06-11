@@ -21,7 +21,7 @@ class LibraryController(QObject):
     def fetchGames(self):
         """Обновляет список игр из сервиса."""
         try:
-            self._games_list = self._stats_service.get_games_list()
+            self._games_list = self._stats_service.get_games_list_with_rating()
             self.gamesListChanged.emit()
         except Exception as e:
             print(f"Error fetching games: {e}")
@@ -31,14 +31,14 @@ class LibraryController(QObject):
         """Запускает парсер для получения метаданных."""
         print(f"Fetching metadata for app_id={app_id}, game_name={game_name}")
 
-    @Slot(int, str, str, 'QVariant')
-    def saveManualMetadata(self, app_id, icon_path, genre, year):
-        """Сохраняет метаданные вручную."""
-        print(f"Saving manual metadata for app_id={app_id}, icon_path={icon_path}, genre={genre}, year={year}")
+    @Slot(int, str, str, 'QVariant', str)
+    def saveManualMetadata(self, app_id, icon_path, genre, year, rating=None):
+        """Сохраняет метаданные вручную, включая рейтинг."""
+        print(f"Saving manual metadata for app_id={app_id}, icon_path={icon_path}, genre={genre}, year={year}, rating={rating}")
         try:
-            year = None if year == 0 else year  # Преобразуем 0 в None для базы
-            self._stats_service.update_game_metadata(app_id, icon_path, genre, year)
-            self.fetchGames()  # Обновляем список игр
+            year = None if year == 0 else year
+            self._stats_service.update_game_metadata(app_id, icon_path, genre, year, rating)
+            self.fetchGames()
         except Exception as e:
             print(f"Error saving metadata: {e}")
 

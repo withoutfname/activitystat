@@ -228,7 +228,7 @@ Item {
 
             }
         }
-    }
+    }   
 
     Dialog {
         id: editDialog
@@ -241,13 +241,19 @@ Item {
         property var currentGame: ({})
 
         onOpened: {
-            if (currentGame) {
+            if (currentGame && currentGame.app_id) {
+                var updatedGame = libraryController.gamesList.find(game => game.app_id === currentGame.app_id)
+                if (updatedGame) {
+                    editDialog.currentGame = updatedGame
+                }
                 gameNameLabel.text = currentGame.name || "Unnamed Game"
                 genreRepeater.updateSelectedGenres(currentGame.genre ? currentGame.genre.split(", ") : [])
                 yearField.text = currentGame.year > 0 ? currentGame.year : ""
                 previewImage.source = currentGame.icon_path
-                                ? Qt.resolvedUrl(currentGame.icon_path).toString()
-                                : Qt.resolvedUrl("../../resources/app_icons/images.jpg")
+                    ? Qt.resolvedUrl(currentGame.icon_path).toString()
+                    : Qt.resolvedUrl("../../resources/app_icons/images.jpg")
+                ratingRow.currentRating = currentGame.rating || null
+                console.log("[Library] Opened dialog for", currentGame.name, "with rating:", currentGame.rating)
             } else {
                 console.error("[Library] No currentGame when dialog opened")
             }
@@ -261,7 +267,6 @@ Item {
 
             onAccepted: {
                 if (editDialog.currentGame && editDialog.currentGame.app_id) {
-                    // Улучшенная обработка пути
                     var sourcePath = fileDialog.file.toString()
                     if (sourcePath.startsWith("file:///")) {
                         sourcePath = sourcePath.substring(8)
@@ -281,9 +286,7 @@ Item {
                     console.error("[Library] No currentGame or app_id when file selected")
                 }
             }
-            onRejected: {
-                // Логирование удалено
-            }
+            onRejected: {}
         }
 
         ScrollView {
@@ -360,24 +363,22 @@ Item {
                             Repeater {
                                 id: genreRepeater
                                 model: [
-                                        "Action", "Adventure", "RPG", "Strategy", "Simulation",
-                                        "Shooter", "Racing", "Sports", "Horror", "Sandbox",
-                                        "Open World", "Survival", "Stealth", "Fighting",
-                                        "Battle Royale", "Souls-like", "Roguelike", "Tactical",
-                                        "Fantasy", "Cyberpunk", "Post-Apocalyptic",
-                                        "Interactive Movie", "Narrative", "Single", "Multiplayer",
-                                        "Co-op", "MMO"
-                                    ]
+                                    "Action", "Adventure", "RPG", "Strategy", "Simulation",
+                                    "Shooter", "Racing", "Sports", "Horror", "Sandbox",
+                                    "Open World", "Survival", "Stealth", "Fighting",
+                                    "Battle Royale", "Souls-like", "Roguelike", "Tactical",
+                                    "Fantasy", "Cyberpunk", "Post-Apocalyptic",
+                                    "Interactive Movie", "Narrative", "Single", "Multiplayer",
+                                    "Co-op", "MMO"
+                                ]
 
                                 property var selectedGenres: []
 
                                 function updateSelectedGenres(genres) {
                                     selectedGenres = genres || []
-                                    // Фильтруем "Unknown" из начального списка, если он присутствует
                                     selectedGenres = selectedGenres.filter(function(genre) {
                                         return genre !== "Unknown" && model.indexOf(genre) !== -1
                                     })
-                                    console.log("[Library] Initial selected genres after filtering:", selectedGenres)
                                     for (var i = 0; i < count; i++) {
                                         var button = itemAt(i)
                                         button.checked = selectedGenres.includes(button.text)
@@ -388,7 +389,6 @@ Item {
                                     text: modelData
                                     checkable: true
                                     checked: genreRepeater.selectedGenres.includes(modelData)
-
 
                                     Layout.minimumWidth: 100
                                     Layout.preferredHeight: 40
@@ -411,6 +411,57 @@ Item {
                                         }
                                     }
                                 }
+                            }
+                        }
+                    }
+                }
+
+                RowLayout {
+                    Layout.fillWidth: true
+                    spacing: 10
+
+                    Label {
+                        text: "Оценка:"
+                        font.pixelSize: 14
+                    }
+
+                    Row {
+                        id: ratingRow
+                        spacing: 5
+
+                        property string currentRating: editDialog.currentGame ? editDialog.currentGame.rating : null
+
+                        function updateRating(newRating) {
+                            currentRating = newRating // Только обновляем локально, без сохранения
+                        }
+
+                        Button {
+                            text: "Like"
+                            checkable: true
+                            checked: ratingRow.currentRating === "like"
+                            palette.button: checked ? "#ffcccc" : "white"
+                            onClicked: {
+                                ratingRow.updateRating(checked ? "like" : null)
+                            }
+                        }
+
+                        Button {
+                            text: "Dislike"
+                            checkable: true
+                            checked: ratingRow.currentRating === "dislike"
+                            palette.button: checked ? "#cce5ff" : "white"
+                            onClicked: {
+                                ratingRow.updateRating(checked ? "dislike" : null)
+                            }
+                        }
+
+                        Button {
+                            text: "Mixed"
+                            checkable: true
+                            checked: ratingRow.currentRating === "mixed"
+                            palette.button: checked ? "#e6ffe6" : "white"
+                            onClicked: {
+                                ratingRow.updateRating(checked ? "mixed" : null)
                             }
                         }
                     }
@@ -444,7 +495,8 @@ Item {
                                 editDialog.currentGame.app_id,
                                 editDialog.currentGame.icon_path || "",
                                 genresString,
-                                newYear
+                                newYear,
+                                ratingRow.currentRating // Передаём выбранный рейтинг
                             )
                             editDialog.close()
                         } else {

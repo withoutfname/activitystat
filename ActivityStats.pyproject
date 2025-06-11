@@ -35,6 +35,8 @@
         "src/backend/repositories/streak_stats_repository.py",
         "src/backend/repositories/exp_stats_repository.py",
         "src/backend/repositories/game_insights_repository.py",
-        "src/backend/repositories/fun_facts_repository.py"
+        "src/backend/repositories/fun_facts_repository.py",
+        "src/backend/repositories/app_repository.py",
+        "ui/pages/Favorite.qml"
     ]
 }
