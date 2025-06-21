@@ -158,7 +158,26 @@ Item {
                                 color: "black"
                                 horizontalAlignment: Text.AlignHCenter
                             }
+
+                            Text {
+                                visible: modelData.is_external && modelData.rating
+                                text: {
+                                    if (modelData.rating === "like") return "Rating: 👍 Liked"
+                                    else if (modelData.rating === "dislike") return "Rating: 👎 Disliked"
+                                    else if (modelData.rating === "mixed") return "Rating: ~ Mixed"
+                                    else return ""
+                                }
+                                font.pixelSize: 12
+                                color: {
+                                    if (modelData.rating === "like") return "#51cf66"
+                                    else if (modelData.rating === "dislike") return "#ff6b6b"
+                                    else if (modelData.rating === "mixed") return "#ADFF2F"
+                                    else return "black"
+                                }
+                                horizontalAlignment: Text.AlignHCenter
+                            }
                         }
+
 
                         RowLayout {
                             id: buttonRow
@@ -167,13 +186,12 @@ Item {
                             anchors.rightMargin: 10
                             anchors.bottomMargin: 10
                             spacing: 5
-                            visible: false
+                            visible: !modelData.is_external && hoverInfo.visible // Условие для скрытия кнопок при is_external == true
 
                             Button {
                                 id: autoButton
                                 implicitWidth: 40
                                 implicitHeight: 40
-
                                 Image {
                                     source: Qt.resolvedUrl("../../resources/images/auto_parse_icon.png").toString()
                                     anchors.centerIn: parent
@@ -190,7 +208,6 @@ Item {
                                 id: manualButton
                                 implicitWidth: 40
                                 implicitHeight: 40
-
                                 Image {
                                     source: Qt.resolvedUrl("../../resources/images/manual_icon.png").toString()
                                     anchors.centerIn: parent
@@ -205,30 +222,30 @@ Item {
                             }
                         }
 
+
+
                         MouseArea {
-                            anchors.fill: parent // Изменено с hoverInfo на parent (вся карточка)
+                            anchors.fill: parent
                             hoverEnabled: true
                             onEntered: {
                                 card.color = "#f0f0f0"
                                 hoverInfo.visible = true
-                                buttonRow.visible = true
+                                buttonRow.visible = !modelData.is_external // Показываем кнопки только для НЕ внешних игр
                             }
                             onExited: {
                                 card.color = "white"
                                 hoverInfo.visible = false
-                                buttonRow.visible = false // Изменено с true на false
+                                buttonRow.visible = false
                             }
-
-                            // Добавлено для предотвращения блокировки кликов по кнопкам
                             propagateComposedEvents: true
-                            acceptedButtons: Qt.NoButton // Мы не обрабатываем клики, только ховер
+                            acceptedButtons: Qt.NoButton
                         }
                     }
                 }
 
             }
         }
-    }   
+    }
 
     Dialog {
         id: editDialog

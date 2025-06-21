@@ -37,6 +37,8 @@
         "src/backend/repositories/game_insights_repository.py",
         "src/backend/repositories/fun_facts_repository.py",
         "src/backend/repositories/app_repository.py",
-        "ui/pages/Favorite.qml"
+        "ui/pages/Favorite.qml",
+        "external_games/games.json"
+
     ]
 }
