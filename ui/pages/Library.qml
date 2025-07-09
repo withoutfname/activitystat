@@ -8,6 +8,21 @@ Item {
         libraryController.fetchGames()
     }
 
+    Connections {
+        target: libraryController
+        function onRawgMetadataFetched(app_id, icon_path, genres, year) {
+            if (editDialog.currentGame && editDialog.currentGame.app_id === app_id) {
+                editDialog.tempIconPath = icon_path
+                editDialog.tempGenres = genres ? genres.split(", ") : []
+                editDialog.tempYear = year > 0 ? year : ""
+                editDialog.open()
+                console.log("[Library] Received RAWG metadata for app_id:", app_id, "icon_path:", icon_path, "genres:", genres, "year:", year)
+            } else {
+                console.error("[Library] Mismatch in app_id for RAWG metadata:", app_id, "currentGame:", editDialog.currentGame.app_id)
+            }
+        }
+    }
+
     ScrollView {
         id: scrollView
         anchors.fill: parent
@@ -81,6 +96,8 @@ Item {
                                 width: 140
                                 height: 140
                                 fillMode: Image.PreserveAspectFit
+                                sourceSize.width: 140
+                                sourceSize.height: 140
                                 anchors.horizontalCenter: parent.horizontalCenter
                                 source: {
                                     var imgPath = ""
@@ -178,7 +195,6 @@ Item {
                             }
                         }
 
-
                         RowLayout {
                             id: buttonRow
                             anchors.right: parent.right
@@ -186,7 +202,7 @@ Item {
                             anchors.rightMargin: 10
                             anchors.bottomMargin: 10
                             spacing: 5
-                            visible: !modelData.is_external && hoverInfo.visible // Условие для скрытия кнопок при is_external == true
+                            visible: !modelData.is_external && hoverInfo.visible
 
                             Button {
                                 id: autoButton
@@ -200,7 +216,8 @@ Item {
                                     fillMode: Image.PreserveAspectFit
                                 }
                                 onClicked: {
-                                    // Логирование удалено
+                                    editDialog.currentGame = modelData
+                                    libraryController.fetchRawgMetadata(modelData.app_id, modelData.name)
                                 }
                             }
 
@@ -217,12 +234,13 @@ Item {
                                 }
                                 onClicked: {
                                     editDialog.currentGame = modelData
+                                    editDialog.tempIconPath = modelData.icon_path || ""
+                                    editDialog.tempGenres = modelData.genre ? modelData.genre.split(", ") : []
+                                    editDialog.tempYear = modelData.year > 0 ? modelData.year : ""
                                     editDialog.open()
                                 }
                             }
                         }
-
-
 
                         MouseArea {
                             anchors.fill: parent
@@ -230,7 +248,7 @@ Item {
                             onEntered: {
                                 card.color = "#f0f0f0"
                                 hoverInfo.visible = true
-                                buttonRow.visible = !modelData.is_external // Показываем кнопки только для НЕ внешних игр
+                                buttonRow.visible = !modelData.is_external
                             }
                             onExited: {
                                 card.color = "white"
@@ -242,7 +260,6 @@ Item {
                         }
                     }
                 }
-
             }
         }
     }
@@ -256,6 +273,9 @@ Item {
         anchors.centerIn: parent
 
         property var currentGame: ({})
+        property string tempIconPath: ""
+        property var tempGenres: []
+        property string tempYear: ""
 
         onOpened: {
             if (currentGame && currentGame.app_id) {
@@ -264,16 +284,27 @@ Item {
                     editDialog.currentGame = updatedGame
                 }
                 gameNameLabel.text = currentGame.name || "Unnamed Game"
-                genreRepeater.updateSelectedGenres(currentGame.genre ? currentGame.genre.split(", ") : [])
-                yearField.text = currentGame.year > 0 ? currentGame.year : ""
-                previewImage.source = currentGame.icon_path
-                    ? Qt.resolvedUrl(currentGame.icon_path).toString()
-                    : Qt.resolvedUrl("../../resources/app_icons/images.jpg")
+                genreRepeater.updateSelectedGenres(tempGenres.length > 0 ? tempGenres : (currentGame.genre ? currentGame.genre.split(", ") : []))
+                yearField.text = tempYear !== "" ? tempYear : (currentGame.year > 0 ? currentGame.year : "")
+                previewImage.source = tempIconPath !== "" ? Qt.resolvedUrl(tempIconPath).toString() :
+                                     (currentGame.icon_path ? Qt.resolvedUrl(currentGame.icon_path).toString() :
+                                     Qt.resolvedUrl("../../resources/app_icons/images.jpg"))
                 ratingRow.currentRating = currentGame.rating || null
-                console.log("[Library] Opened dialog for", currentGame.name, "with rating:", currentGame.rating)
+                console.log("[Library] Opened dialog for", currentGame.name, "with temp data - icon:", tempIconPath, "genres:", tempGenres, "year:", tempYear)
             } else {
                 console.error("[Library] No currentGame when dialog opened")
             }
+        }
+
+        onClosed: {
+            // Очистка временного пути к изображению, если оно не было сохранено
+            if (tempIconPath !== "" && tempIconPath !== currentGame.icon_path) {
+                // Предполагаем, что временный файл нужно удалить, если он не был сохранен
+                console.log("[Library] Cleaning up temp icon path:", tempIconPath)
+            }
+            tempIconPath = ""
+            tempGenres = []
+            tempYear = ""
         }
 
         Platform.FileDialog {
@@ -294,10 +325,10 @@ Item {
                     var newIconPath = libraryController.copyIcon(sourcePath, editDialog.currentGame.app_id.toString())
                     if (newIconPath) {
                         console.log("[Library] New icon path:", newIconPath)
+                        editDialog.tempIconPath = newIconPath
                         previewImage.source = Qt.resolvedUrl(newIconPath).toString()
-                        editDialog.currentGame.icon_path = newIconPath
                     } else {
-                        console.error("[Library] Failed to copy icon, keeping old path:", editDialog.currentGame.icon_path)
+                        console.error("[Library] Failed to copy icon, keeping old path:", editDialog.tempIconPath)
                     }
                 } else {
                     console.error("[Library] No currentGame or app_id when file selected")
@@ -337,11 +368,16 @@ Item {
 
                     Image {
                         id: previewImage
-                        width: 200
-                        height: 200
+                        width: 140
+                        height: 140
                         fillMode: Image.PreserveAspectFit
+                        sourceSize.width: 140
+                        sourceSize.height: 140
+                        clip: true
                         Layout.alignment: Qt.AlignVCenter
-                        source: editDialog.currentGame && editDialog.currentGame.icon_path ? Qt.resolvedUrl(editDialog.currentGame.icon_path).toString() : Qt.resolvedUrl("../../resources/app_icons/images.jpg")
+                        source: editDialog.tempIconPath !== "" ? Qt.resolvedUrl(editDialog.tempIconPath).toString() :
+                                (editDialog.currentGame && editDialog.currentGame.icon_path ? Qt.resolvedUrl(editDialog.currentGame.icon_path).toString() :
+                                Qt.resolvedUrl("../../resources/app_icons/images.jpg"))
                         onStatusChanged: {
                             if (status === Image.Error) {
                                 console.error("[Library] Failed to load preview image:", source)
@@ -449,7 +485,7 @@ Item {
                         property string currentRating: editDialog.currentGame ? editDialog.currentGame.rating : null
 
                         function updateRating(newRating) {
-                            currentRating = newRating // Только обновляем локально, без сохранения
+                            currentRating = newRating
                         }
 
                         Button {
@@ -510,10 +546,10 @@ Item {
                             var genresString = genreRepeater.selectedGenres.join(", ")
                             libraryController.saveManualMetadata(
                                 editDialog.currentGame.app_id,
-                                editDialog.currentGame.icon_path || "",
+                                editDialog.tempIconPath || editDialog.currentGame.icon_path || "",
                                 genresString,
                                 newYear,
-                                ratingRow.currentRating // Передаём выбранный рейтинг
+                                ratingRow.currentRating
                             )
                             editDialog.close()
                         } else {

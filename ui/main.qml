@@ -14,19 +14,19 @@ ApplicationWindow {
     minimumHeight: 750
 
     property var tabSources: [
-        Qt.resolvedUrl("../ui/pages/Dashboard.qml").toString(),
         Qt.resolvedUrl("../ui/pages/Time.qml").toString(),
         Qt.resolvedUrl("../ui/pages/Library.qml").toString(),
-        Qt.resolvedUrl("../ui/pages/Favorite.qml").toString()
+        Qt.resolvedUrl("../ui/pages/Favorite.qml").toString(),
+        Qt.resolvedUrl("../ui/pages/Dashboard.qml").toString()
     ]
 
     header: TabBar {
         id: tabBar
-        width: parent.width
-        TabButton { text: "Dashboard" }
+        width: parent.width        
         TabButton { text: "Time" }
         TabButton { text: "Library" }
         TabButton { text: "Favorite games"}
+        TabButton { text: "Dashboard" }
     }
 
     Loader {

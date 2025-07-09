@@ -4,7 +4,6 @@ class GameStatsRepository:
     def __init__(self, db):
         self.db = db
 
-    '''
 
     def get_unique_years(self):
         try:
@@ -35,6 +34,9 @@ class GameStatsRepository:
         except Exception as e:
             print(f"Error executing query: {e}")
             return []  # Возвращаем пустой список в случае ошибки
+
+        '''
+
 
 
 
