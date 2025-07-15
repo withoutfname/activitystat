@@ -15,10 +15,8 @@ Item {
                 editDialog.tempIconPath = icon_path
                 editDialog.tempGenres = genres ? genres.split(", ") : []
                 editDialog.tempYear = year > 0 ? year : ""
+                editDialog.isNewIcon = (icon_path !== "" && icon_path !== editDialog.currentGame.icon_path)
                 editDialog.open()
-                console.log("[Library] Received RAWG metadata for app_id:", app_id, "icon_path:", icon_path, "genres:", genres, "year:", year)
-            } else {
-                console.error("[Library] Mismatch in app_id for RAWG metadata:", app_id, "currentGame:", editDialog.currentGame.app_id)
             }
         }
     }
@@ -99,19 +97,54 @@ Item {
                                 sourceSize.width: 140
                                 sourceSize.height: 140
                                 anchors.horizontalCenter: parent.horizontalCenter
+                                cache: false
+
                                 source: {
-                                    var imgPath = ""
+                                    console.log("=== Image source calculation start ===");
+                                    console.log("Game name:", modelData.name || "Unnamed");
+                                    console.log("is_external:", modelData.is_external);
+                                    console.log("Original icon_path:", modelData.icon_path);
+
                                     if (modelData.icon_path && modelData.icon_path !== "") {
-                                        imgPath = Qt.resolvedUrl(modelData.icon_path)
+                                        if (modelData.is_external) {
+                                            var resolvedPath = Qt.resolvedUrl(modelData.icon_path);
+                                            console.log("[External] Resolved path:", resolvedPath);
+
+                                            // Проверка существования файла
+                                            var cleanPath = resolvedPath.toString().replace("file:///", "");
+                                            var fileExists = libraryController.checkFileExists(cleanPath);
+                                            console.log("File exists:", fileExists, "at path:", cleanPath);
+
+                                            if (!fileExists) {
+                                                console.error("External image file not found, using fallback");
+                                                return Qt.resolvedUrl("../../resources/images/no_image.jpg");
+                                            }
+
+                                            return resolvedPath;
+                                        } else {
+                                            var internalUrl = libraryController.getIconUrl(modelData.icon_path);
+                                            console.log("[Internal] getIconUrl result:", internalUrl);
+
+                                            if (!internalUrl) {
+                                                console.error("Internal image URL is empty, using fallback");
+                                                return Qt.resolvedUrl("../../resources/images/no_image.jpg");
+                                            }
+
+                                            // Проверка существования файла
+                                            var cleanInternalPath = internalUrl.toString().replace("file:///", "");
+                                            var fileExistsInternal = libraryController.checkFileExists(cleanInternalPath);
+                                            console.log("Internal file exists:", fileExistsInternal, "at path:", cleanInternalPath);
+
+                                            if (!fileExistsInternal) {
+                                                console.error("Internal image file not found, using fallback");
+                                                return Qt.resolvedUrl("../../resources/images/no_image.jpg");
+                                            }
+
+                                            return internalUrl;
+                                        }
                                     } else {
-                                        imgPath = Qt.resolvedUrl("../../resources/app_icons/images.jpg")
-                                    }
-                                    return imgPath
-                                }
-                                onStatusChanged: {
-                                    if (status === Image.Error) {
-                                        console.error("[Library] Failed to load image for", modelData.name, "path:", source)
-                                        source = Qt.resolvedUrl("../../resources/app_icons/images.jpg")
+                                        console.log("No icon_path provided, using fallback image");
+                                        return Qt.resolvedUrl("../../resources/images/no_image.jpg");
                                     }
                                 }
                             }
@@ -177,7 +210,7 @@ Item {
                             }
 
                             Text {
-                                visible: modelData.is_external && modelData.rating
+                                visible: !modelData.is_external && modelData.rating
                                 text: {
                                     if (modelData.rating === "like") return "Rating: 👍 Liked"
                                     else if (modelData.rating === "dislike") return "Rating: 👎 Disliked"
@@ -237,6 +270,7 @@ Item {
                                     editDialog.tempIconPath = modelData.icon_path || ""
                                     editDialog.tempGenres = modelData.genre ? modelData.genre.split(", ") : []
                                     editDialog.tempYear = modelData.year > 0 ? modelData.year : ""
+                                    editDialog.isNewIcon = false
                                     editDialog.open()
                                 }
                             }
@@ -269,16 +303,19 @@ Item {
         title: "Edit Game Metadata"
         standardButtons: Dialog.Close
         width: 800
-        height: 800
+        height: 650
         anchors.centerIn: parent
 
         property var currentGame: ({})
         property string tempIconPath: ""
         property var tempGenres: []
         property string tempYear: ""
+        property bool isNewIcon: false
+        property string selectedIconPath: ""
 
         onOpened: {
             if (currentGame && currentGame.app_id) {
+                console.log("Opening editDialog for game:", currentGame.name, "rating:", currentGame.rating)
                 var updatedGame = libraryController.gamesList.find(game => game.app_id === currentGame.app_id)
                 if (updatedGame) {
                     editDialog.currentGame = updatedGame
@@ -286,25 +323,39 @@ Item {
                 gameNameLabel.text = currentGame.name || "Unnamed Game"
                 genreRepeater.updateSelectedGenres(tempGenres.length > 0 ? tempGenres : (currentGame.genre ? currentGame.genre.split(", ") : []))
                 yearField.text = tempYear !== "" ? tempYear : (currentGame.year > 0 ? currentGame.year : "")
-                previewImage.source = tempIconPath !== "" ? Qt.resolvedUrl(tempIconPath).toString() :
-                                     (currentGame.icon_path ? Qt.resolvedUrl(currentGame.icon_path).toString() :
-                                     Qt.resolvedUrl("../../resources/app_icons/images.jpg"))
-                ratingRow.currentRating = currentGame.rating || null
-                console.log("[Library] Opened dialog for", currentGame.name, "with temp data - icon:", tempIconPath, "genres:", tempGenres, "year:", tempYear)
-            } else {
-                console.error("[Library] No currentGame when dialog opened")
+                ratingRow.currentRating = currentGame.rating !== undefined ? currentGame.rating : ""
+                console.log("Set currentRating to:", ratingRow.currentRating)
+
+                // Сбрасываем флаг новой иконки
+                selectedIconPath = ""
+                isNewIcon = false
+
+                // Устанавливаем изображение
+                if (tempIconPath && tempIconPath.startsWith("temp_")) {
+                    previewImage.source = libraryController.getIconUrl(tempIconPath)
+                } else if (currentGame.is_external) {
+                    previewImage.source = currentGame.icon_path
+                        ? Qt.resolvedUrl(currentGame.icon_path)
+                        : Qt.resolvedUrl("../../resources/images/no_image.jpg")
+                } else {
+                    previewImage.source = currentGame.icon_path
+                        ? libraryController.getIconUrl(currentGame.icon_path)
+                        : Qt.resolvedUrl("../../resources/images/no_image.jpg")
+                }
             }
         }
 
         onClosed: {
-            // Очистка временного пути к изображению, если оно не было сохранено
-            if (tempIconPath !== "" && tempIconPath !== currentGame.icon_path) {
-                // Предполагаем, что временный файл нужно удалить, если он не был сохранен
-                console.log("[Library] Cleaning up temp icon path:", tempIconPath)
+            // Удаляем временную иконку, если она не была сохранена
+            if (tempIconPath && tempIconPath.startsWith("temp_") && !isNewIcon) {
+                console.log("Deleting temp icon on dialog close:", tempIconPath)
+                libraryController.deleteTempIcon(tempIconPath)
             }
             tempIconPath = ""
             tempGenres = []
             tempYear = ""
+            isNewIcon = false
+            selectedIconPath = ""
         }
 
         Platform.FileDialog {
@@ -316,25 +367,18 @@ Item {
             onAccepted: {
                 if (editDialog.currentGame && editDialog.currentGame.app_id) {
                     var sourcePath = fileDialog.file.toString()
-                    if (sourcePath.startsWith("file:///")) {
-                        sourcePath = sourcePath.substring(8)
-                    } else if (sourcePath.startsWith("file://")) {
-                        sourcePath = sourcePath.substring(7)
-                    }
-                    console.log("[Library] Selected source path:", sourcePath)
-                    var newIconPath = libraryController.copyIcon(sourcePath, editDialog.currentGame.app_id.toString())
-                    if (newIconPath) {
-                        console.log("[Library] New icon path:", newIconPath)
-                        editDialog.tempIconPath = newIconPath
-                        previewImage.source = Qt.resolvedUrl(newIconPath).toString()
+                    // Убираем file:/// для проверки существования
+                    var cleanPath = sourcePath.replace("file:///", "")
+
+                    if (libraryController.checkFileExists(cleanPath)) {
+                        editDialog.selectedIconPath = cleanPath
+                        editDialog.isNewIcon = true
+                        previewImage.source = "file:///" + cleanPath
                     } else {
-                        console.error("[Library] Failed to copy icon, keeping old path:", editDialog.tempIconPath)
+                        console.error("Файл не существует:", cleanPath)
                     }
-                } else {
-                    console.error("[Library] No currentGame or app_id when file selected")
                 }
             }
-            onRejected: {}
         }
 
         ScrollView {
@@ -375,15 +419,7 @@ Item {
                         sourceSize.height: 140
                         clip: true
                         Layout.alignment: Qt.AlignVCenter
-                        source: editDialog.tempIconPath !== "" ? Qt.resolvedUrl(editDialog.tempIconPath).toString() :
-                                (editDialog.currentGame && editDialog.currentGame.icon_path ? Qt.resolvedUrl(editDialog.currentGame.icon_path).toString() :
-                                Qt.resolvedUrl("../../resources/app_icons/images.jpg"))
-                        onStatusChanged: {
-                            if (status === Image.Error) {
-                                console.error("[Library] Failed to load preview image:", source)
-                                source = Qt.resolvedUrl("../../resources/app_icons/images.jpg")
-                            }
-                        }
+                        cache: false
                     }
 
                     Button {
@@ -474,7 +510,7 @@ Item {
                     spacing: 10
 
                     Label {
-                        text: "Оценка:"
+                        text: "Rating:"
                         font.pixelSize: 14
                     }
 
@@ -482,10 +518,10 @@ Item {
                         id: ratingRow
                         spacing: 5
 
-                        property string currentRating: editDialog.currentGame ? editDialog.currentGame.rating : null
+                        property string currentRating: editDialog.currentGame && editDialog.currentGame.rating !== undefined ? editDialog.currentGame.rating : ""
 
                         function updateRating(newRating) {
-                            currentRating = newRating
+                            currentRating = newRating || ""
                         }
 
                         Button {
@@ -494,7 +530,7 @@ Item {
                             checked: ratingRow.currentRating === "like"
                             palette.button: checked ? "#ffcccc" : "white"
                             onClicked: {
-                                ratingRow.updateRating(checked ? "like" : null)
+                                ratingRow.updateRating(checked ? "like" : "")
                             }
                         }
 
@@ -504,7 +540,7 @@ Item {
                             checked: ratingRow.currentRating === "dislike"
                             palette.button: checked ? "#cce5ff" : "white"
                             onClicked: {
-                                ratingRow.updateRating(checked ? "dislike" : null)
+                                ratingRow.updateRating(checked ? "dislike" : "")
                             }
                         }
 
@@ -514,7 +550,7 @@ Item {
                             checked: ratingRow.currentRating === "mixed"
                             palette.button: checked ? "#e6ffe6" : "white"
                             onClicked: {
-                                ratingRow.updateRating(checked ? "mixed" : null)
+                                ratingRow.updateRating(checked ? "mixed" : "")
                             }
                         }
                     }
@@ -544,16 +580,47 @@ Item {
                         if (editDialog.currentGame && editDialog.currentGame.app_id) {
                             var newYear = parseInt(yearField.text) || 0
                             var genresString = genreRepeater.selectedGenres.join(", ")
+
+                            // Определяем путь для сохранения
+                            var iconToSave = ""
+                            if (editDialog.selectedIconPath !== "") {
+                                // Пытаемся сохранить выбранную картинку (из fileDialog)
+                                iconToSave = libraryController.saveIconToAppData(
+                                    editDialog.selectedIconPath,
+                                    editDialog.currentGame.app_id
+                                )
+                            } else if (editDialog.tempIconPath && editDialog.tempIconPath.startsWith("temp_")) {
+                                // Используем временную иконку из автопарсинга
+                                iconToSave = libraryController.saveIconToAppData(
+                                    libraryController.get_full_icon_path(editDialog.tempIconPath),
+                                    editDialog.currentGame.app_id
+                                )
+                            } else {
+                                // Используем текущую иконку
+                                iconToSave = editDialog.currentGame.icon_path || ""
+                            }
+
+                            if (iconToSave === "") {
+                                console.error("Не удалось сохранить иконку")
+                                return
+                            }
+
+                            // Сохраняем метаданные
                             libraryController.saveManualMetadata(
                                 editDialog.currentGame.app_id,
-                                editDialog.tempIconPath || editDialog.currentGame.icon_path || "",
+                                iconToSave,
                                 genresString,
                                 newYear,
                                 ratingRow.currentRating
                             )
+
+                            // Устанавливаем isNewIcon, чтобы предотвратить удаление в onClosed
+                            editDialog.isNewIcon = true
+
+                            console.log("Forcing Library.qml refresh by calling fetchGames")
+                            libraryController.fetchGames()
+
                             editDialog.close()
-                        } else {
-                            console.error("[Library] Cannot save - no currentGame or app_id")
                         }
                     }
                 }

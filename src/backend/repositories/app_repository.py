@@ -63,7 +63,8 @@ class AppRepository:
                 "session_count": int(row[4]) if row[4] else 0,
                 "genre": row[5] if row[5] is not None else "Unknown",
                 "year": int(row[6]) if row[6] is not None else None,
-                "icon_path": row[7] if row[7] is not None else "../../resources/app_icons/images.jpg",
+                # В методах get_games_list и get_games_list_with_rating
+                "icon_path": row[7] if row[7] is not None else None,
                 "app_id": row[8]  # Добавляем app_id в словарь
             }
             for row in result
@@ -124,8 +125,8 @@ class AppRepository:
                 "session_count": int(row[4]) if row[4] else 0,
                 "genre": row[5] if row[5] is not None else "Unknown",
                 "year": int(row[6]) if row[6] is not None else None,
-                "icon_path": row[7] if row[7] is not None else "../../resources/app_icons/images.jpg",
-                "rating": row[8] if row[8] is not None else None,
+                "icon_path": row[7] if row[7] is not None else None,
+                "rating": row[8] if row[8] is not None else "",
                 "app_id": row[9]
             }
             for row in result

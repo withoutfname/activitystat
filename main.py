@@ -9,6 +9,9 @@ from PySide6.QtWidgets import QApplication
 from src.backend.database import Database
 from src.backend.services import StatsService, DashboardService
 from src.frontend.controllers import DashboardController, TimeController, LibraryController
+from PySide6.QtQuickControls2 import QQuickStyle
+
+
 
 def qt_message_handler(mode, context, message):
     try:
@@ -41,6 +44,7 @@ if __name__ == "__main__":
     # Устанавливаем обработчик сообщений ДО создания QApplication
     qInstallMessageHandler(qt_message_handler)
 
+    QQuickStyle.setStyle("Fusion")  # Или "Fusion", "Basic"
     app = QApplication(sys.argv)
     print("QApplication created")
 
