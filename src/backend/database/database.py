@@ -1,25 +1,41 @@
 import psycopg2
 from psycopg2 import Error
 
+# src/backend/database/database.py
 class Database:
     def __init__(self, dbname="activitydb", user="postgres", password="pass", host="localhost", port="5432"):
         self.connection = None
         self.cursor = None
+        self.db_params = {
+            'dbname': dbname,
+            'user': user,
+            'password': password,
+            'host': host,
+            'port': port
+        }
+        self.connect()
+        self._create_tables_if_not_exist()
+
+    def connect(self):
         try:
-            self.connection = psycopg2.connect(
-                dbname=dbname,
-                user=user,
-                password=password,
-                host=host,
-                port=port
-            )
-            self.connection.autocommit = True  # Включаем автокоммит
+            if self.connection is not None and not self.connection.closed:
+                self.close()
+
+            self.connection = psycopg2.connect(**self.db_params)
+            self.connection.autocommit = True
             self.cursor = self.connection.cursor()
             self._create_tables_if_not_exist()
             print("Database connection successful")
         except Error as e:
             print(f"Error connecting to database: {e}")
             raise
+
+    def close(self):
+        if self.cursor:
+            self.cursor.close()
+        if self.connection and not self.connection.closed:
+            self.connection.close()
+        print("Database connection closed")
 
     def _create_tables_if_not_exist(self):
         """Создает таблицы, если они не существуют"""
@@ -130,9 +146,3 @@ class Database:
             print(f"Error creating tables: {e}")
             raise
 
-    def close(self):
-        if self.cursor:
-            self.cursor.close()
-        if self.connection:
-            self.connection.close()
-            print("Database connection closed")

@@ -2,17 +2,13 @@ import sys
 import os
 import io
 
-
 from PySide6.QtCore import QUrl, QtMsgType, qInstallMessageHandler
 from PySide6.QtQml import QQmlApplicationEngine
 from PySide6.QtWidgets import QApplication
 from src.backend.database.database import Database
-from src.backend.services import StatsService, DashboardService
-from src.controllers.dashboard_controller import DashboardController
-from src.controllers import TimeController, LibraryController
+from src.backend.services import StatsService, DashboardService, BackupService
+from src.controllers import DashboardController, TimeController, LibraryController, BackupController
 from PySide6.QtQuickControls2 import QQuickStyle
-
-
 
 def qt_message_handler(mode, context, message):
     try:
@@ -32,8 +28,6 @@ def qt_message_handler(mode, context, message):
         sys.stdout.flush()
     except Exception as e:
         print(f"Error in message handler: {e}")
-
-
 
     # Выводим только QML сообщения (console.log попадает в QtInfoMsg)
     if 'qml' in context.file.lower() or context.file.endswith('.qml'):
@@ -59,13 +53,21 @@ if __name__ == "__main__":
 
     # Initialize repositories and service
     stats_service = StatsService(db)
-    dashboard_service = DashboardService(db)
+    dashboard_service = DashboardService(db)    
+    backup_service = BackupService({
+        'dbname': "activitydb",
+        'user': "postgres",
+        'password': "pass",
+        'host': "localhost",
+        'port': "5432"
+    }, db)  # Передаем db как второй аргумент
 
     # Create controllers
     try:
         dashboard_controller = DashboardController(dashboard_service)
         time_controller = TimeController(stats_service)
         library_controller = LibraryController(stats_service)
+        backup_controller = BackupController(backup_service)
         print("Controllers created")
     except Exception as e:
         print(f"Controller error: {e}")
@@ -79,6 +81,7 @@ if __name__ == "__main__":
     engine.rootContext().setContextProperty("dashboardController", dashboard_controller)
     engine.rootContext().setContextProperty("timeController", time_controller)
     engine.rootContext().setContextProperty("libraryController", library_controller)
+    engine.rootContext().setContextProperty("backupController", backup_controller)
     print("Controllers set in QML context")
 
     # Load QML with absolute path
