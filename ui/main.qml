@@ -14,6 +14,7 @@ ApplicationWindow {
     minimumHeight: 750
 
     property var tabSources: [
+        Qt.resolvedUrl("../ui/pages/Index.qml").toString(),
         Qt.resolvedUrl("../ui/pages/Time.qml").toString(),
         Qt.resolvedUrl("../ui/pages/Library.qml").toString(),
         Qt.resolvedUrl("../ui/pages/Favorite.qml").toString(),
@@ -22,7 +23,8 @@ ApplicationWindow {
 
     header: TabBar {
         id: tabBar
-        width: parent.width        
+        width: parent.width
+        TabButton { text: "Main" }
         TabButton { text: "Time" }
         TabButton { text: "Library" }
         TabButton { text: "Favorite games"}

@@ -7,7 +7,6 @@ from .max_session_repository import MaxSessionRepository
 from .day_of_week_repository import DayOfWeekRepository
 from .time_of_day_repository import TimeOfDayRepository
 from .consecutive_days_repository import ConsecutiveDaysRepository
-
 from .game_stats_repository import GameStatsRepository
 from .genre_stats_repository import GenreStatsRepository
 from .release_year_stats_repository import ReleaseYearStatsRepository

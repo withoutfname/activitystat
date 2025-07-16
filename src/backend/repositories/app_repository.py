@@ -1,4 +1,4 @@
-from src.backend.database import Database
+from src.backend.database.database import Database
 
 class AppRepository:
     def __init__(self, db):

@@ -100,20 +100,20 @@ Item {
                                 cache: false
 
                                 source: {
-                                    console.log("=== Image source calculation start ===");
-                                    console.log("Game name:", modelData.name || "Unnamed");
-                                    console.log("is_external:", modelData.is_external);
-                                    console.log("Original icon_path:", modelData.icon_path);
+                                    //console.log("=== Image source calculation start ===");
+                                    //console.log("Game name:", modelData.name || "Unnamed");
+                                    //console.log("is_external:", modelData.is_external);
+                                    //console.log("Original icon_path:", modelData.icon_path);
 
                                     if (modelData.icon_path && modelData.icon_path !== "") {
                                         if (modelData.is_external) {
                                             var resolvedPath = Qt.resolvedUrl(modelData.icon_path);
-                                            console.log("[External] Resolved path:", resolvedPath);
+                                            //console.log("[External] Resolved path:", resolvedPath);
 
                                             // Проверка существования файла
                                             var cleanPath = resolvedPath.toString().replace("file:///", "");
                                             var fileExists = libraryController.checkFileExists(cleanPath);
-                                            console.log("File exists:", fileExists, "at path:", cleanPath);
+                                            //console.log("File exists:", fileExists, "at path:", cleanPath);
 
                                             if (!fileExists) {
                                                 console.error("External image file not found, using fallback");
@@ -123,7 +123,7 @@ Item {
                                             return resolvedPath;
                                         } else {
                                             var internalUrl = libraryController.getIconUrl(modelData.icon_path);
-                                            console.log("[Internal] getIconUrl result:", internalUrl);
+                                            //console.log("[Internal] getIconUrl result:", internalUrl);
 
                                             if (!internalUrl) {
                                                 console.error("Internal image URL is empty, using fallback");
@@ -133,7 +133,7 @@ Item {
                                             // Проверка существования файла
                                             var cleanInternalPath = internalUrl.toString().replace("file:///", "");
                                             var fileExistsInternal = libraryController.checkFileExists(cleanInternalPath);
-                                            console.log("Internal file exists:", fileExistsInternal, "at path:", cleanInternalPath);
+                                           // console.log("Internal file exists:", fileExistsInternal, "at path:", cleanInternalPath);
 
                                             if (!fileExistsInternal) {
                                                 console.error("Internal image file not found, using fallback");
@@ -143,7 +143,7 @@ Item {
                                             return internalUrl;
                                         }
                                     } else {
-                                        console.log("No icon_path provided, using fallback image");
+                                       // console.log("No icon_path provided, using fallback image");
                                         return Qt.resolvedUrl("../../resources/images/no_image.jpg");
                                     }
                                 }
@@ -315,7 +315,7 @@ Item {
 
         onOpened: {
             if (currentGame && currentGame.app_id) {
-                console.log("Opening editDialog for game:", currentGame.name, "rating:", currentGame.rating)
+                //console.log("Opening editDialog for game:", currentGame.name, "rating:", currentGame.rating)
                 var updatedGame = libraryController.gamesList.find(game => game.app_id === currentGame.app_id)
                 if (updatedGame) {
                     editDialog.currentGame = updatedGame
@@ -324,7 +324,7 @@ Item {
                 genreRepeater.updateSelectedGenres(tempGenres.length > 0 ? tempGenres : (currentGame.genre ? currentGame.genre.split(", ") : []))
                 yearField.text = tempYear !== "" ? tempYear : (currentGame.year > 0 ? currentGame.year : "")
                 ratingRow.currentRating = currentGame.rating !== undefined ? currentGame.rating : ""
-                console.log("Set currentRating to:", ratingRow.currentRating)
+                //console.log("Set currentRating to:", ratingRow.currentRating)
 
                 // Сбрасываем флаг новой иконки
                 selectedIconPath = ""
@@ -348,7 +348,7 @@ Item {
         onClosed: {
             // Удаляем временную иконку, если она не была сохранена
             if (tempIconPath && tempIconPath.startsWith("temp_") && !isNewIcon) {
-                console.log("Deleting temp icon on dialog close:", tempIconPath)
+                //console.log("Deleting temp icon on dialog close:", tempIconPath)
                 libraryController.deleteTempIcon(tempIconPath)
             }
             tempIconPath = ""
@@ -617,7 +617,7 @@ Item {
                             // Устанавливаем isNewIcon, чтобы предотвратить удаление в onClosed
                             editDialog.isNewIcon = true
 
-                            console.log("Forcing Library.qml refresh by calling fetchGames")
+                            //console.log("Forcing Library.qml refresh by calling fetchGames")
                             libraryController.fetchGames()
 
                             editDialog.close()

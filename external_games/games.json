@@ -518,17 +518,6 @@
       "genre": null
     },
     {
-      "name": "Euro Truck Simulator 2",
-      "image": "images/ets2.jpg",
-      "total_hours": 213.5,
-      "rating": "mixed",
-      "year": 2012,
-      "first_played": null,
-      "last_played": null,
-      "session_count": null,
-      "genre": null
-    },
-    {
       "name": "House Flipper",
       "image": "images/houseflipper.jpg",
       "total_hours": 21.6,

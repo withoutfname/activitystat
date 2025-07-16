@@ -6,9 +6,10 @@ import io
 from PySide6.QtCore import QUrl, QtMsgType, qInstallMessageHandler
 from PySide6.QtQml import QQmlApplicationEngine
 from PySide6.QtWidgets import QApplication
-from src.backend.database import Database
+from src.backend.database.database import Database
 from src.backend.services import StatsService, DashboardService
-from src.frontend.controllers import DashboardController, TimeController, LibraryController
+from src.controllers.dashboard_controller import DashboardController
+from src.controllers import TimeController, LibraryController
 from PySide6.QtQuickControls2 import QQuickStyle
 
 

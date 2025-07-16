@@ -7,7 +7,7 @@ current_dir = os.path.dirname(os.path.abspath(__file__))
 project_root = os.path.abspath(os.path.join(current_dir, '..', '..', '..'))
 sys.path.append(project_root)
 
-from src.backend.database import Database
+from src.backend.database.database import Database
 
 class FunFactsRepository:
     def __init__(self, db):
