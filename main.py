@@ -7,7 +7,7 @@ from PySide6.QtQml import QQmlApplicationEngine
 from PySide6.QtWidgets import QApplication
 from src.backend.database.database import Database
 from src.backend.services import StatsService, DashboardService, BackupService
-from src.controllers import DashboardController, TimeController, LibraryController, BackupController
+from src.controllers import DashboardController, TimeController, LibraryController, BackupController, AiController
 from PySide6.QtQuickControls2 import QQuickStyle
 
 def qt_message_handler(mode, context, message):
@@ -53,7 +53,7 @@ if __name__ == "__main__":
 
     # Initialize repositories and service
     stats_service = StatsService(db)
-    dashboard_service = DashboardService(db)    
+    dashboard_service = DashboardService(db)
     backup_service = BackupService({
         'dbname': "activitydb",
         'user': "postgres",
@@ -68,6 +68,7 @@ if __name__ == "__main__":
         time_controller = TimeController(stats_service)
         library_controller = LibraryController(stats_service)
         backup_controller = BackupController(backup_service)
+        ai_controller = AiController(stats_service)
         print("Controllers created")
     except Exception as e:
         print(f"Controller error: {e}")
@@ -82,6 +83,7 @@ if __name__ == "__main__":
     engine.rootContext().setContextProperty("timeController", time_controller)
     engine.rootContext().setContextProperty("libraryController", library_controller)
     engine.rootContext().setContextProperty("backupController", backup_controller)
+    engine.rootContext().setContextProperty("aiController", ai_controller)
     print("Controllers set in QML context")
 
     # Load QML with absolute path

@@ -97,57 +97,57 @@ Item {
                             cache: false
 
                             source: {
-                                console.log("=== Favorite image source calculation start ===");
-                                console.log("Game name:", modelData.name || "Unnamed");
-                                console.log("is_external:", modelData.is_external);
-                                console.log("Original icon_path:", modelData.icon_path);
+                                //console.log("=== Favorite image source calculation start ===");
+                                //console.log("Game name:", modelData.name || "Unnamed");
+                                //console.log("is_external:", modelData.is_external);
+                                //console.log("Original icon_path:", modelData.icon_path);
 
                                 if (modelData.icon_path && modelData.icon_path !== "") {
                                     if (modelData.is_external) {
                                         var resolvedPath = Qt.resolvedUrl(modelData.icon_path);
-                                        console.log("[External] Resolved path:", resolvedPath);
+                                        //console.log("[External] Resolved path:", resolvedPath);
 
                                         // Проверка существования файла
                                         var cleanPath = resolvedPath.toString().replace("file:///", "");
                                         var fileExists = libraryController.checkFileExists(cleanPath);
-                                        console.log("File exists:", fileExists, "at path:", cleanPath);
+                                        //console.log("File exists:", fileExists, "at path:", cleanPath);
 
                                         if (!fileExists) {
-                                            console.error("External image file not found, using fallback");
+                                            //console.error("External image file not found, using fallback");
                                             return Qt.resolvedUrl("../../resources/app_icons/images.jpg");
                                         }
 
                                         return resolvedPath;
                                     } else {
                                         var internalUrl = libraryController.getIconUrl(modelData.icon_path);
-                                        console.log("[Internal] getIconUrl result:", internalUrl);
+                                        //console.log("[Internal] getIconUrl result:", internalUrl);
 
                                         if (!internalUrl) {
-                                            console.error("Internal image URL is empty, using fallback");
+                                            //console.error("Internal image URL is empty, using fallback");
                                             return Qt.resolvedUrl("../../resources/app_icons/images.jpg");
                                         }
 
                                         // Проверка существования файла
                                         var cleanInternalPath = internalUrl.toString().replace("file:///", "");
                                         var fileExistsInternal = libraryController.checkFileExists(cleanInternalPath);
-                                        console.log("Internal file exists:", fileExistsInternal, "at path:", cleanInternalPath);
+                                        //console.log("Internal file exists:", fileExistsInternal, "at path:", cleanInternalPath);
 
                                         if (!fileExistsInternal) {
-                                            console.error("Internal image file not found, using fallback");
+                                            //console.error("Internal image file not found, using fallback");
                                             return Qt.resolvedUrl("../../resources/app_icons/images.jpg");
                                         }
 
                                         return internalUrl;
                                     }
                                 } else {
-                                    console.log("No icon_path provided, using fallback image");
+                                    //console.log("No icon_path provided, using fallback image");
                                     return Qt.resolvedUrl("../../resources/app_icons/images.jpg");
                                 }
                             }
 
                             onStatusChanged: {
                                 if (status === Image.Error) {
-                                    console.error("Image load error for", modelData.name, "path:", source);
+                                    //console.error("Image load error for", modelData.name, "path:", source);
                                     source = Qt.resolvedUrl("../../resources/app_icons/images.jpg");
                                 }
                             }

@@ -40,6 +40,14 @@ Item {
                 Layout.topMargin: 10
             }
 
+            Button {
+                text: "Export to PDF"
+                Layout.alignment: Qt.AlignRight
+                onClicked: {
+                    libraryController.exportToPdf()
+                }
+            }
+
             Loader {
                 id: noDataLoader
                 active: libraryController.gamesList.length === 0

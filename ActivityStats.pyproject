@@ -42,6 +42,9 @@
         "src/backend/repositories/streak_stats_repository.py",
         "src/backend/repositories/time_of_day_repository.py",
         "src/backend/repositories/time_stats_repository.py",
-        "external_games/games.json"
+        "external_games/games.json",
+        "ui/pages/AI.qml",
+        "src/controllers/ai_controller/ai_controller.py",
+        "src/controllers/ai_controller/__init__.py"
     ]
 }

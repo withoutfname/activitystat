@@ -126,61 +126,38 @@ class StreakStatsRepository:
         } if result else {"game": None, "length": 0, "start_date": None, "end_date": None}
 
     def get_longest_break_in_year(self, year):
-        """Возвращает самый длинный перерыв между игровыми днями в указанном году"""
+        """Returns the longest break between gaming sessions in the specified year"""
         query = """
-        WITH RECURSIVE dates AS (
-            SELECT CAST(MIN(CAST(start_time AS date)) AS date) AS date
+        WITH gaming_days AS (
+            SELECT DISTINCT CAST(start_time AS date) AS game_date
             FROM activity_sessions
-            WHERE EXTRACT(YEAR FROM start_time) = %s AND end_time IS NOT NULL
-            UNION ALL
-            SELECT CAST(date + INTERVAL '1 day' AS date)
-            FROM dates
-            WHERE date < (
-                SELECT CAST(MAX(CAST(start_time AS date)) AS date)
-                FROM activity_sessions
-                WHERE EXTRACT(YEAR FROM start_time) = %s AND end_time IS NOT NULL
-            )
+            WHERE EXTRACT(YEAR FROM start_time) = %s
+              AND end_time IS NOT NULL
         ),
-        gaming_days AS (
-            SELECT CAST(start_time AS date) AS game_date
-            FROM activity_sessions
-            WHERE EXTRACT(YEAR FROM start_time) = %s AND end_time IS NOT NULL
-            GROUP BY CAST(start_time AS date)
-        ),
-        streaks AS (
+        date_ranges AS (
             SELECT
-                d.date,
-                CASE
-                    WHEN gd.game_date IS NOT NULL THEN 0
-                    ELSE 1
-                END AS is_break,
-                SUM(CASE WHEN gd.game_date IS NOT NULL THEN 0 ELSE 1 END) OVER (
-                    ORDER BY d.date
-                    ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
-                ) AS group_id
-            FROM dates d
-            LEFT JOIN gaming_days gd ON d.date = gd.game_date
+                game_date,
+                LEAD(game_date) OVER (ORDER BY game_date) AS next_game_date
+            FROM gaming_days
         ),
-        break_lengths AS (
+        breaks AS (
             SELECT
-                group_id,
-                COUNT(*) AS break_length,
-                MIN(date) AS start_date,
-                MAX(date) AS end_date
-            FROM streaks
-            WHERE is_break = 1
-            GROUP BY group_id
-            HAVING COUNT(*) >= 1  -- Изменено с > 1 на >= 1, чтобы учитывать одиночные дни перерыва
-            ORDER BY break_length DESC
-            LIMIT 1
+                game_date AS break_start,
+                next_game_date AS break_end,
+                next_game_date - game_date - 1 AS break_days
+            FROM date_ranges
+            WHERE next_game_date IS NOT NULL
+              AND next_game_date > game_date + 1
         )
         SELECT
-            break_length,
-            start_date,
-            end_date
-        FROM break_lengths;
+            break_days,
+            break_start,
+            break_end - 1 AS end_date
+        FROM breaks
+        ORDER BY break_days DESC
+        LIMIT 1;
         """
-        self.db.cursor.execute(query, (year, year, year))
+        self.db.cursor.execute(query, (year,))
         result = self.db.cursor.fetchone()
         return {
             "length": result[0] if result else 0,
@@ -197,7 +174,7 @@ if __name__ == "__main__":
         repo = StreakStatsRepository(db)
 
         # Тестируем для 2025 года
-        year = 2024
+        year = 2025
         print(f"\nTesting StreakStatsRepository for year {year}:\n")
 
         # Тест get_longest_gaming_streak_in_year

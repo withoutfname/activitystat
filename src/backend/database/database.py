@@ -3,7 +3,7 @@ from psycopg2 import Error
 
 # src/backend/database/database.py
 class Database:
-    def __init__(self, dbname="activitydb", user="postgres", password="pass", host="localhost", port="5432"):
+    def __init__(self, dbname="activitydb", user="user", password="password", host="localhost", port="5432"):
         self.connection = None
         self.cursor = None
         self.db_params = {

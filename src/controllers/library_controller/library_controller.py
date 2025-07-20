@@ -1,4 +1,4 @@
-from PySide6.QtCore import QObject, Property, Slot, Signal, QCoreApplication
+from PySide6.QtCore import QObject, Property, Slot, Signal, QCoreApplication, QStandardPaths
 import os
 import shutil
 import sys
@@ -6,10 +6,17 @@ import json
 import hashlib
 import requests
 import time
+from reportlab.lib.pagesizes import letter
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Image, Table, TableStyle
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib import colors
+from reportlab.lib.units import inch
+from datetime import datetime
+from PIL import Image as PILImage
 
 class LibraryController(QObject):
     gamesListChanged = Signal()
-    rawgMetadataFetched = Signal(int, str, str, int)  # Сигнал для передачи спарсенных данных: app_id, icon_path, genres, year
+    rawgMetadataFetched = Signal(int, str, str, int)
 
     def __init__(self, stats_service):
         super().__init__()
@@ -17,8 +24,7 @@ class LibraryController(QObject):
         self._games_list = []
         self._base_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../.."))
         self._external_games_path = os.path.join(self._base_path, "external_games", "games.json")
-        self._api_key = "0a6d31758d334f5fbba869e536259048"  # Ключ API RAWG
-        # Список допустимых жанров из QML
+        self._api_key = ""
         self._valid_genres = [
             "Action", "Adventure", "RPG", "Strategy", "Simulation", "Shooter", "Racing", "Sports",
             "Horror", "Sandbox", "Open World", "Survival", "Stealth", "Fighting", "Battle Royale",
@@ -28,13 +34,11 @@ class LibraryController(QObject):
         self._icons_dir = self._init_icons_directory()
 
     def _init_icons_directory(self):
-        """Инициализирует папку для хранения иконок в AppData/Roaming/ActivityStats/app_icons"""
         try:
-            if os.name == 'nt':  # Windows
+            if os.name == 'nt':
                 appdata_path = os.getenv('APPDATA')
-            else:  # Для других ОС
+            else:
                 appdata_path = os.path.expanduser('~')
-
             icons_dir = os.path.join(appdata_path, "ActivityStats", "app_icons")
             os.makedirs(icons_dir, exist_ok=True)
             print(f"Icons directory initialized at: {icons_dir}")
@@ -49,7 +53,6 @@ class LibraryController(QObject):
 
     @Slot()
     def fetchGames(self):
-        """Обновляет список игр из сервиса и внешнего JSON с сортировкой по часам."""
         try:
             db_games = self._stats_service.get_games_list_with_rating()
             external_games = self.load_external_games()
@@ -59,7 +62,6 @@ class LibraryController(QObject):
             print(f"Ошибка при загрузке игр: {e}")
 
     def load_external_games(self):
-        """Читает данные из games.json и возвращает список игр."""
         external_games = []
         if os.path.exists(self._external_games_path):
             try:
@@ -100,7 +102,6 @@ class LibraryController(QObject):
 
     @Slot(int, str, str, 'QVariant', str)
     def saveManualMetadata(self, app_id, icon_path, genre, year, rating=None):
-        """Сохраняет метаданные игры."""
         print(f"Сохранение метаданных для app_id={app_id}, icon_path={icon_path}, genre={genre}, year={year}, rating={rating}")
         try:
             year = None if year == 0 else year
@@ -110,45 +111,34 @@ class LibraryController(QObject):
             print(f"Ошибка сохранения метаданных: {e}")
 
     def get_icon_path_for_qml(self, absolute_path):
-        """Преобразует абсолютный путь к иконке в формат, понятный QML (file:///)"""
         if not absolute_path:
             return ""
         return f"file:///{absolute_path.replace(os.sep, '/')}"
 
     @Slot(str, result=str)
     def get_full_icon_path(self, icon_name):
-        """Возвращает полный путь к иконке на текущей системе"""
         if not icon_name or not self._icons_dir:
             return ""
         return os.path.join(self._icons_dir, icon_name)
 
     @Slot(str, str, result=str)
     def copyIcon(self, source_path, app_id):
-        """Копирует иконку в папку AppData/Roaming/ActivityStats/app_icons и возвращает имя файла для БД"""
         try:
             if not os.path.exists(source_path):
                 print(f"Ошибка: Исходный файл не существует: {source_path}")
                 return ""
-
             if not self._icons_dir:
                 print("Ошибка: Папка для иконок не инициализирована")
                 return ""
-
             extension = os.path.splitext(source_path)[1]
             if not extension:
                 print(f"Ошибка: У исходного файла нет расширения: {source_path}")
                 return ""
-
-            # Генерируем уникальное имя файла с временной меткой
             timestamp = int(time.time())
             new_file_name = f"{app_id}_icon_{timestamp}{extension}"
             destination_path = os.path.join(self._icons_dir, new_file_name)
-
-            # Копируем файл
             shutil.copy2(source_path, destination_path)
             print(f"Иконка скопирована из {source_path} в {destination_path}")
-
-            # Возвращаем только имя файла для хранения в БД
             return new_file_name
         except Exception as e:
             print(f"Ошибка копирования иконки: {str(e)}")
@@ -156,85 +146,64 @@ class LibraryController(QObject):
 
     @Slot(str, result=str)
     def getIconUrl(self, icon_name):
-        """Возвращает URL иконки для QML (file:///...)"""
         if not icon_name:
             return ""
-
-        # Если путь начинается с "../" или "../../", считаем его относительным от корня проекта
         if icon_name.startswith(".."):
             full_path = os.path.abspath(os.path.join(self._base_path, icon_name))
         else:
-            # Иначе предполагаем, что это имя файла в папке app_icons
             full_path = self.get_full_icon_path(icon_name)
-
         return self.get_icon_path_for_qml(full_path) if full_path else ""
 
     @Slot(int, str)
     def fetchRawgMetadata(self, app_id, game_name):
-        """Получает метаданные игры из RAWG API и отправляет их в QML."""
         print(f"Автопарсинг метаданных для app_id={app_id}, game_name={game_name}")
         temp_path = ""
         try:
-            # Шаг 1: Поиск игры по имени
             search_url = f"https://api.rawg.io/api/games?key={self._api_key}&search={game_name}&page_size=1"
             search_response = requests.get(search_url)
             if search_response.status_code != 200:
                 print(f"Ошибка поиска игры в RAWG API: {search_response.status_code}")
                 return
-
             search_data = search_response.json()
             if not search_data.get("results"):
                 print(f"Игра '{game_name}' не найдена в RAWG API")
                 return
-
             game_id = search_data["results"][0]["id"]
-
-            # Шаг 2: Получение полных данных игры
             game_url = f"https://api.rawg.io/api/games/{game_id}?key={self._api_key}"
             game_response = requests.get(game_url)
             if game_response.status_code != 200:
                 print(f"Ошибка получения данных игры из RAWG API: {game_response.status_code}")
                 return
-
             game_data = game_response.json()
-
-            # Извлечение года
             year = 0
             if game_data.get("released"):
                 try:
                     year = int(game_data["released"].split("-")[0])
                 except (ValueError, IndexError):
                     print(f"Ошибка парсинга года выпуска для {game_name}")
-
-            # Извлечение и фильтрация жанров и тегов
             genres = [genre["name"] for genre in game_data.get("genres", [])]
             tags = [tag["name"] for tag in game_data.get("tags", [])]
             combined_genres_and_tags = genres + tags
             filtered_genres = [item for item in combined_genres_and_tags if item in self._valid_genres]
-            # Удаляем дубликаты, сохраняя порядок
             filtered_genres = list(dict.fromkeys(filtered_genres))
             genres_string = ", ".join(filtered_genres) if filtered_genres else ""
-
-            # Загрузка и сохранение изображения во временный файл
             icon_path = ""
             image_url = game_data.get("background_image")
             if image_url:
                 try:
                     image_response = requests.get(image_url)
                     if image_response.status_code == 200:
-                        extension = ".jpg"  # Всегда используем jpg для скачанных изображений
+                        extension = ".jpg"
                         timestamp = int(time.time())
                         temp_path = os.path.join(self._icons_dir, f"temp_{app_id}_icon_{timestamp}{extension}")
                         with open(temp_path, "wb") as image_file:
                             image_file.write(image_response.content)
-                        icon_path = os.path.basename(temp_path)  # Передаём имя временного файла
+                        icon_path = os.path.basename(temp_path)
                         print(f"Временная иконка для {game_name} сохранена: {temp_path}")
                     else:
                         print(f"Ошибка загрузки изображения: {image_response.status_code}")
                 except Exception as e:
                     print(f"Ошибка сохранения изображения: {e}")
-
-            # Отправляем данные в QML через сигнал
             self.rawgMetadataFetched.emit(app_id, icon_path or "", genres_string, year)
             print(f"Метаданные для {game_name} отправлены в QML")
         except Exception as e:
@@ -242,15 +211,10 @@ class LibraryController(QObject):
 
     @Slot(str, str, result=str)
     def saveIconToAppData(self, source_path, app_id):
-        """Копирует иконку в appdata только при сохранении и возвращает имя файла для БД"""
         if not source_path:
             print("Source path is empty, returning empty string")
             return ""
-
-        # Проверяем, является ли файл временным (начинается с temp_)
         is_temp_icon = os.path.basename(source_path).startswith(f"temp_{app_id}_icon")
-
-        # Удаляем все старые иконки для данного app_id
         import glob
         for ext in ['*.png', '*.jpg', '*.jpeg']:
             pattern = os.path.join(self._icons_dir, f"{app_id}_icon{ext}")
@@ -260,12 +224,9 @@ class LibraryController(QObject):
                     print(f"Deleted old icon: {old_icon_path}")
                 except Exception as e:
                     print(f"Error deleting old icon {old_icon_path}: {str(e)}")
-
-        # Если это временная иконка, всегда копируем её с новым именем
         if is_temp_icon:
             new_icon = self.copyIcon(source_path, app_id)
             if new_icon:
-                # Удаляем временный файл после успешного копирования
                 try:
                     os.remove(source_path)
                     print(f"Deleted temp icon: {source_path}")
@@ -273,7 +234,6 @@ class LibraryController(QObject):
                     print(f"Error deleting temp icon {source_path}: {str(e)}")
             return new_icon
         else:
-            # Если это не временная иконка (например, из fileDialog), копируем её
             if source_path.startswith(self._icons_dir):
                 print(f"Source path {source_path} is already in AppData, returning basename")
                 return os.path.basename(source_path)
@@ -282,10 +242,8 @@ class LibraryController(QObject):
 
     @Slot(str)
     def deleteTempIcon(self, temp_path):
-        """Удаляет временный файл иконки"""
         if not temp_path:
             return
-
         full_path = os.path.join(self._icons_dir, temp_path)
         if os.path.exists(full_path):
             try:
@@ -296,5 +254,124 @@ class LibraryController(QObject):
 
     @Slot(str, result=bool)
     def checkFileExists(self, file_path):
-        """Проверяет существование файла по указанному пути"""
         return os.path.exists(file_path)
+
+    @Slot(result=str)
+    def exportToPdf(self):
+        try:
+            docs_path = QStandardPaths.writableLocation(QStandardPaths.DocumentsLocation)
+            if not docs_path:
+                docs_path = os.path.expanduser("~")
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            pdf_path = os.path.join(docs_path, f"GameLibrary_{timestamp}.pdf")
+            doc = SimpleDocTemplate(
+                pdf_path,
+                pagesize=letter,
+                rightMargin=0.5*inch,
+                leftMargin=0.5*inch,
+                topMargin=0.5*inch,
+                bottomMargin=0.5*inch
+            )
+            elements = []
+            styles = getSampleStyleSheet()
+            title_style = ParagraphStyle(
+                'Title',
+                parent=styles['Heading1'],
+                fontSize=18,
+                alignment=1,
+                spaceAfter=20
+            )
+            elements.append(Paragraph("My Game Library", title_style))
+            for game in self._games_list:
+                self._add_game_to_pdf(elements, game)
+                elements.append(Spacer(1, 12))
+            doc.build(elements)
+            print(f"PDF generated at: {pdf_path}")
+            return pdf_path
+        except Exception as e:
+            print(f"Error generating PDF: {str(e)}")
+            return ""
+
+    def _add_game_to_pdf(self, elements, game):
+        styles = getSampleStyleSheet()
+        name_style = ParagraphStyle(
+            'GameName',
+            parent=styles['Heading2'],
+            fontSize=14,
+            spaceAfter=6
+        )
+        elements.append(Paragraph(game.get('name', 'Unknown Game'), name_style))
+        game_data = []
+        img_path = self._get_image_path_for_pdf(game)
+        img_element = None
+        if img_path and os.path.exists(img_path):
+            try:
+                pil_img = PILImage.open(img_path)
+                img_width, img_height = pil_img.size
+                target_width = 2*inch
+                target_height = 2*inch
+                aspect = img_width / img_height
+                if aspect > 1:
+                    target_height = target_width / aspect
+                else:
+                    target_width = target_height * aspect
+                img_element = Image(img_path, width=target_width, height=target_height)
+            except Exception as e:
+                print(f"Error processing image {img_path}: {str(e)}")
+        metadata_style = ParagraphStyle(
+            'Metadata',
+            parent=styles['Normal'],
+            fontSize=10,
+            leading=12
+        )
+        metadata = [
+            Paragraph(f"<b>Hours Played:</b> {game.get('total_hours', 0):.1f}", metadata_style),
+            Paragraph(f"<b>Sessions:</b> {game.get('session_count', 0)}", metadata_style),
+            #Paragraph(f"<b>First Played:</b> {self._format_date(game.get('first_played'))}", metadata_style),
+            #Paragraph(f"<b>Last Played:</b> {self._format_date(game.get('last_played'))}", metadata_style),
+            #Paragraph(f"<b>Genre:</b> {game.get('genre', 'Unknown')}", metadata_style),
+            Paragraph(f"<b>Year:</b> {game.get('year', 'N/A')}", metadata_style),
+            Paragraph(f"<b>Rating:</b> {self._format_rating(game.get('rating'))}", metadata_style)
+        ]
+        metadata_table = Table([[m] for m in metadata], colWidths=[3.5*inch])
+        metadata_table.setStyle(TableStyle([
+            ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+            ('LEFTPADDING', (0, 0), (-1, -1), 0),
+            ('RIGHTPADDING', (0, 0), (-1, -1), 0),
+        ]))
+        row_data = [img_element or "", metadata_table]
+        game_table = Table([row_data], colWidths=[2.5*inch, 3.5*inch])
+        game_table.setStyle(TableStyle([
+            ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+            ('LINEBELOW', (0, 0), (-1, -1), 1, colors.black),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 12),
+        ]))
+        elements.append(game_table)
+
+    def _get_image_path_for_pdf(self, game):
+        if not game.get('icon_path'):
+            return None
+        if game.get('is_external'):
+            if game['icon_path'].startswith('../../external_games/'):
+                return os.path.join(self._base_path, "external_games",
+                                    game['icon_path'].replace('../../external_games/', ''))
+            return game['icon_path'].replace('file:///', '')
+        else:
+            return self.get_full_icon_path(game['icon_path'])
+
+    def _format_rating(self, rating):
+        if rating == "like":
+            return "👍 Liked"
+        elif rating == "dislike":
+            return "👎 Disliked"
+        elif rating == "mixed":
+            return "~ Mixed"
+        return "Not rated"
+
+    def _format_date(self, timestamp):
+        if not timestamp or timestamp == "N/A":
+            return "N/A"
+        try:
+            return time.strftime("%d-%m-%Y", time.gmtime(timestamp / 1000))
+        except:
+            return "N/A"
