@@ -1,6 +1,13 @@
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
 dist/
 build/
-*.exe
-*.pkg
-*.dll
-*.bin
+*.spec
+.idea/
+external_games/  # Исключаем external_games
+.gitattributes
