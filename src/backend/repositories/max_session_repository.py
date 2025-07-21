@@ -1,5 +1,3 @@
-from src.backend.database.database import Database
-
 class MaxSessionRepository:
     def __init__(self, db):
         self.db = db

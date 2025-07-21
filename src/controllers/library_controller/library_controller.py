@@ -24,7 +24,8 @@ class LibraryController(QObject):
         self._games_list = []
         self._base_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../.."))
         self._external_games_path = os.path.join(self._base_path, "external_games", "games.json")
-        self._api_key = ""
+        self._config = self._load_config()
+        self._api_key = self._config.get("api_key", "")
         self._valid_genres = [
             "Action", "Adventure", "RPG", "Strategy", "Simulation", "Shooter", "Racing", "Sports",
             "Horror", "Sandbox", "Open World", "Survival", "Stealth", "Fighting", "Battle Royale",
@@ -32,6 +33,22 @@ class LibraryController(QObject):
             "Interactive Movie", "Narrative", "Single", "Multiplayer", "Co-op", "MMO"
         ]
         self._icons_dir = self._init_icons_directory()
+
+    def _load_config(self):
+            """Загружает конфигурацию из config.json в корне проекта."""
+            config_path = os.path.join(self._base_path, "config.json")
+            try:
+                with open(config_path, 'r', encoding='utf-8') as f:
+                    return json.load(f)
+            except FileNotFoundError:
+                print(f"Ошибка: Файл конфигурации {config_path} не найден")
+                return {}
+            except json.JSONDecodeError as e:
+                print(f"Ошибка декодирования JSON в файле конфигурации: {e}")
+                return {}
+            except Exception as e:
+                print(f"Ошибка загрузки конфигурации: {e}")
+                return {}
 
     def _init_icons_directory(self):
         try:

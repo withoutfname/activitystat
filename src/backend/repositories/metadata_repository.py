@@ -1,5 +1,3 @@
-from src.backend.database.database import Database
-
 class MetadataRepository:
     def __init__(self, db):
         self.db = db

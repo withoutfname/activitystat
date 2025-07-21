@@ -1,13 +1,3 @@
-import sys
-import os
-
-# Добавляем корень проекта в sys.path
-current_dir = os.path.dirname(os.path.abspath(__file__))
-project_root = os.path.abspath(os.path.join(current_dir, '..', '..', '..'))
-sys.path.append(project_root)
-
-from src.backend.database.database import Database
-
 class StreakStatsRepository:
     def __init__(self, db):
         self.db = db
@@ -164,36 +154,3 @@ class StreakStatsRepository:
             "start_date": result[1].strftime('%d.%m') if result and result[1] else None,
             "end_date": result[2].strftime('%d.%m') if result and result[2] else None
         } if result else {"length": 0, "start_date": None, "end_date": None}
-
-if __name__ == "__main__":
-    try:
-        # Подключение к базе данных
-        print("[DEBUG] Initializing database connection...")
-        db = Database(dbname="activitydb", user="postgres", password="pass", host="localhost", port="5432")
-        print("[DEBUG] Database connection established")
-        repo = StreakStatsRepository(db)
-
-        # Тестируем для 2025 года
-        year = 2025
-        print(f"\nTesting StreakStatsRepository for year {year}:\n")
-
-        # Тест get_longest_gaming_streak_in_year
-        print("Testing get_longest_gaming_streak_in_year...")
-        gaming_streak = repo.get_longest_gaming_streak_in_year(year)
-        print(f"Longest gaming streak: {gaming_streak['length']} days, from {gaming_streak['start_date']} to {gaming_streak['end_date']}")
-
-        # Тест get_longest_game_streak_in_year
-        print("\nTesting get_longest_game_streak_in_year...")
-        game_streak = repo.get_longest_game_streak_in_year(year)
-        print(f"Longest game streak: {game_streak['game']} - {game_streak['length']} days, from {game_streak['start_date']} to {game_streak['end_date']}")
-
-        # Тест get_longest_break_in_year
-        print("\nTesting get_longest_break_in_year...")
-        break_streak = repo.get_longest_break_in_year(year)
-        print(f"Longest break: {break_streak['length']} days, from {break_streak['start_date']} to {break_streak['end_date']}")
-
-    except Exception as e:
-        print(f"[DEBUG] Error in main: {e}")
-    finally:
-        print("[DEBUG] Closing database connection...")
-        db.close()

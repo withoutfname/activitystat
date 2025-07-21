@@ -1,4 +1,3 @@
-from src.backend.database.database import Database
 from datetime import datetime, timedelta
 import pytz
 

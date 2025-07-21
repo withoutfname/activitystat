@@ -1,5 +1,3 @@
-from src.backend.database.database import Database
-
 class SessionCountRepository:
     def __init__(self, db):
         self.db = db

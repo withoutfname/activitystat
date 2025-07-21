@@ -1,32 +1,4 @@
-import psycopg2
-from psycopg2 import Error
 from datetime import datetime
-
-class Database:
-    def __init__(self, dbname="activitydb", user="postgres", password="pass", host="localhost", port="5432"):
-        self.connection = None
-        self.cursor = None
-        try:
-            self.connection = psycopg2.connect(
-                dbname=dbname,
-                user=user,
-                password=password,
-                host=host,
-                port=port
-            )
-            self.connection.autocommit = True  # Включаем автокоммит
-            self.cursor = self.connection.cursor()
-            print("Database connection successful")
-        except Error as e:
-            print(f"Error connecting to database: {e}")
-            raise
-
-    def close(self):
-        if self.cursor:
-            self.cursor.close()
-        if self.connection:
-            self.connection.close()
-            print("Database connection closed")
 
 class GenreStatsRepository:
     def __init__(self, db):
@@ -143,32 +115,3 @@ class GenreStatsRepository:
         except Exception as e:
             print(f"Error executing query: {e}")
             return {'singleplayer': 0, 'multiplayer': 0}
-
-if __name__ == "__main__":
-    # Подключение к базе данных
-    try:
-        db = Database(dbname="activitydb", user="postgres", password="pass", host="localhost", port="5432")
-
-        # Инициализация репозитория
-        repo = GenreStatsRepository(db)
-
-        # Получение результатов для 2025 года
-        print("\nРезультаты для 2025 года:")
-
-        # Основной жанр
-        main_genre = repo.get_main_genre(2025)
-        print(f"Основной жанр: {main_genre['genre']}: {main_genre['hours']} hours" if main_genre else "Основной жанр: N/A")
-
-        # Распределение по жанрам
-        genre_distribution = repo.get_genre_distribution(2025)
-        print("Распределение по жанрам:",
-              ', '.join([f"{g['genre']}: {g['percentage']}%" for g in genre_distribution]) if genre_distribution else "N/A")
-
-        # Одиночные vs мультиплеерные
-        single_vs_multi = repo.get_single_vs_multiplayer(2025)
-        print(f"Singleplayer: {single_vs_multi['singleplayer']}%, Multiplayer: {single_vs_multi['multiplayer']}%")
-
-    except Exception as e:
-        print(f"Error in main: {e}")
-    finally:
-        db.close()

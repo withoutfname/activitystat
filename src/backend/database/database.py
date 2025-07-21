@@ -1,20 +1,36 @@
 import psycopg2
 from psycopg2 import Error
+import json
+import os
 
 # src/backend/database/database.py
 class Database:
-    def __init__(self, dbname="activitydb", user="user", password="password", host="localhost", port="5432"):
+    def __init__(self):
         self.connection = None
         self.cursor = None
-        self.db_params = {
-            'dbname': dbname,
-            'user': user,
-            'password': password,
-            'host': host,
-            'port': port
-        }
+        self._base_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../.."))
+        self.db_params = self._load_config()
         self.connect()
         self._create_tables_if_not_exist()
+
+
+    def _load_config(self):
+        """Загружает конфигурацию из config.json в корне проекта."""
+        config_path = os.path.join(self._base_path, "config.json")
+        try:
+            with open(config_path, 'r', encoding='utf-8') as f:
+                config = json.load(f)
+                db_config = config.get("database", {})
+                return {
+                    'dbname': db_config.get("database"),
+                    'user': db_config.get("user"),
+                    'password': db_config.get("password"),
+                    'host': db_config.get("host"),
+                    'port': str(db_config.get("port"))
+                }
+        except FileNotFoundError:
+            print(f"Ошибка: Файл конфигурации {config_path} не найден")
+
 
     def connect(self):
         try:

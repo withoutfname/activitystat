@@ -1,13 +1,3 @@
-import sys
-import os
-
-# Добавляем корень проекта в sys.path
-current_dir = os.path.dirname(os.path.abspath(__file__))
-project_root = os.path.abspath(os.path.join(current_dir, '..', '..', '..'))
-sys.path.append(project_root)
-
-from src.backend.database.database import Database
-
 class ExpStatsRepository:
     def __init__(self, db):
         self.db = db
@@ -51,27 +41,3 @@ class ExpStatsRepository:
         except Exception as e:
             print(f"[DEBUG] Error in get_overplayed_time_percentage_in_year: {e}")
             return {'overplayed_count': 0, 'total_count': 0, 'percentage': 0.0}
-
-if __name__ == "__main__":
-    try:
-        print("[DEBUG] Initializing database connection...")
-        db = Database(dbname="activitydb", user="postgres", password="pass", host="localhost", port="5432")
-        print("[DEBUG] Database connection established")
-        repo = ExpStatsRepository(db)
-
-        # Тестируем для 2025 года
-        year = 2025
-        print(f"\nTesting ExpStatsRepository for year {year}:\n")
-
-        # Тест get_overplayed_time_percentage_in_year
-        stats = repo.get_overplayed_time_percentage_in_year(year)
-        print(f"Overplayed time stats:")
-        print(f"Number of overplayed sessions (>3 hours): {stats['overplayed_count']}")
-        print(f"Total number of sessions: {stats['total_count']}")
-        print(f"Percentage of overplayed sessions: {stats['percentage']}%")
-
-    except Exception as e:
-        print(f"[DEBUG] Error in main: {e}")
-    finally:
-        print("[DEBUG] Closing database connection...")
-        db.close()

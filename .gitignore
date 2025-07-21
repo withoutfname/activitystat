@@ -9,5 +9,7 @@ dist/
 build/
 *.spec
 .idea/
-external_games/  # Исключаем external_games
+external_games/ 
 .gitattributes
+*.pyproject
+*.pyproject.user

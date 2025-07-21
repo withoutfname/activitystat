@@ -1,13 +1,3 @@
-import sys
-import os
-
-# Добавляем корень проекта в sys.path
-current_dir = os.path.dirname(os.path.abspath(__file__))
-project_root = os.path.abspath(os.path.join(current_dir, '..', '..', '..'))
-sys.path.append(project_root)
-
-from src.backend.database.database import Database
-
 class ReleaseYearStatsRepository:
     def __init__(self, db):
         self.db = db
@@ -83,35 +73,3 @@ class ReleaseYearStatsRepository:
         except Exception as e:
             print(f"[ERROR] Error in get_oldest_game_played: {e}")
             return None
-
-if __name__ == "__main__":
-    try:
-        # Подключение к базе данных
-        print("[DEBUG] Initializing database connection...")
-        db = Database(dbname="activitydb", user="postgres", password="pass", host="localhost", port="5432")
-        print("[DEBUG] Database connection established")
-        repo = ReleaseYearStatsRepository(db)
-
-        # Тестируем для 2024 года
-        year = 2024
-        print(f"\nTesting ReleaseYearStatsRepository for year {year}:\n")
-
-        # Тест get_playtime_by_release_year
-        print("Testing get_playtime_by_release_year...")
-        playtime_dist = repo.get_playtime_by_release_year(year)
-        print("Playtime by release year:")
-        print(f"{year}: {playtime_dist['selected_year']}%")
-        print(f"{year-1}: {playtime_dist['previous_year']}%")
-        print(f"Older: {playtime_dist['older_years']}%")
-
-        # Тест get_oldest_game_played
-        print("\nTesting get_oldest_game_played...")
-        oldest_game = repo.get_oldest_game_played(year)
-        print("Oldest game played:")
-        print(f"{oldest_game['alias']} ({oldest_game['year']})" if oldest_game else "N/A")
-
-    except Exception as e:
-        print(f"[DEBUG] Error in main: {e}")
-    finally:
-        print("[DEBUG] Closing database connection...")
-        db.close()

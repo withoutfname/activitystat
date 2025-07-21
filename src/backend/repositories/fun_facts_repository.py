@@ -1,14 +1,3 @@
-import sys
-import os
-from datetime import datetime, timedelta
-
-# Добавляем корень проекта в sys.path
-current_dir = os.path.dirname(os.path.abspath(__file__))
-project_root = os.path.abspath(os.path.join(current_dir, '..', '..', '..'))
-sys.path.append(project_root)
-
-from src.backend.database.database import Database
-
 class FunFactsRepository:
     def __init__(self, db):
         self.db = db
@@ -74,42 +63,3 @@ class FunFactsRepository:
         except Exception as e:
             print(f"[DEBUG] Error in get_games_played_one_day: {e}")
             return [], 0
-
-if __name__ == "__main__":
-    try:
-        # Подключение к базе данных
-        print("[DEBUG] Initializing database connection...")
-        db = Database(dbname="activitydb", user="postgres", password="pass", host="localhost", port="5432")
-        print("[DEBUG] Database connection established")
-        repo = FunFactsRepository(db)
-
-        # Тестируем для 2025 года
-        year = 2025
-        print(f"\nTesting FunFactsRepository for year {year}:\n")
-
-        # Тест распределения по платформам
-        print("Testing get_platform_distribution...")
-        platform_dist = repo.get_platform_distribution(year)
-        if platform_dist:
-            print(f"Platform distribution:")
-            print(f"Xbox: {platform_dist['xbox']}%")
-            print(f"Steam: {platform_dist['steam']}%")
-            print(f"Other: {platform_dist['other']}%")
-        else:
-            print("No platform distribution data found")
-
-        # Тест игр, в которые играли один день
-        print("\nTesting get_games_played_one_day...")
-        one_day_games, game_count = repo.get_games_played_one_day(year)
-        print(f"Games played only one day (Total: {game_count}):")
-        if one_day_games:
-            for i, game in enumerate(one_day_games, 1):
-                print(f"{i}. {game}")
-        else:
-            print("No games played only one day")
-
-    except Exception as e:
-        print(f"[DEBUG] Error in main: {e}")
-    finally:
-        print("[DEBUG] Closing database connection...")
-        db.close()
