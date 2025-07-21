@@ -18,7 +18,7 @@ ApplicationWindow {
         Qt.resolvedUrl("../ui/pages/Time.qml").toString(),
         Qt.resolvedUrl("../ui/pages/Library.qml").toString(),
         Qt.resolvedUrl("../ui/pages/Favorite.qml").toString(),
-        //Qt.resolvedUrl("../ui/pages/AI.qml").toString(),
+        Qt.resolvedUrl("../ui/pages/AI.qml").toString(),
         Qt.resolvedUrl("../ui/pages/Dashboard.qml").toString()
     ]
 
@@ -29,7 +29,7 @@ ApplicationWindow {
         TabButton { text: "Time" }
         TabButton { text: "Library" }
         TabButton { text: "Favorite games"}
-        //TabButton { text: "AI" }
+        TabButton { text: "AI" }
         TabButton { text: "Dashboard" }        
     }
 

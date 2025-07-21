@@ -14,3 +14,4 @@ external_games/
 *.pyproject
 *.pyproject.user
 config.json
+directory.md
