@@ -20,6 +20,8 @@ class StatsService:
         total_seconds = self.time_stats_repo.get_simp_total_seconds(start_days, end_days)
         return total_seconds / 3600.0
 
+
+
     def get_top_games(self, start_days=None, end_days=None, limit=None):
         return self.app_repo.get_top_games(start_days, end_days, limit)
 
