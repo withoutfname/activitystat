@@ -13,3 +13,4 @@ external_games/
 .gitattributes
 *.pyproject
 *.pyproject.user
+config.json
