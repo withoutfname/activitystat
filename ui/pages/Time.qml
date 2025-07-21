@@ -19,9 +19,18 @@ Item {
     property color section2Color: "#f5f0f2"  // Очень светлый розовато-серый
     property color section3Color: "#f2f5f0"  // Очень светлый зеленовато-серый
 
+
+
+
+    onControllerReadyChanged: {
+            if (controllerReady && timeController && timeController.pieChartData) {
+                pieSeries.updateSlices()
+            }
+        }
+
     Timer {
         id: initTimer
-        interval: 100
+        interval: 50
         repeat: false
         running: true
         onTriggered: {
@@ -65,6 +74,17 @@ Item {
                     Layout.alignment: Qt.AlignHCenter
                 }
 
+                Timer {
+                    id: debounceTimer
+                    interval: 200 // Задержка в миллисекундах перед отправкой изменений
+                    repeat: false
+                    onTriggered: {
+                        if (timeController) {
+                            timeController.setIntervalRange(Math.floor(rangeSlider.first.value), Math.floor(rangeSlider.second.value))
+                        }
+                    }
+                }
+
                 RangeSlider {
                     id: rangeSlider
                     Layout.fillWidth: true
@@ -75,8 +95,8 @@ Item {
                     stepSize: 1
                     snapMode: RangeSlider.SnapAlways
 
-                    first.onMoved: if (timeController) timeController.setIntervalRange(Math.floor(first.value), Math.floor(second.value))
-                    second.onMoved: if (timeController) timeController.setIntervalRange(Math.floor(first.value), Math.floor(second.value))
+                    first.onValueChanged: debounceTimer.restart()
+                    second.onValueChanged: debounceTimer.restart()
 
                     background: Rectangle {
                         x: rangeSlider.leftPadding
