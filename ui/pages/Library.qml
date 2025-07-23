@@ -42,7 +42,7 @@ Item {
 
             Button {
                 text: "Export to PDF"
-                Layout.alignment: Qt.AlignRight
+                Layout.alignment: Qt.AlignCenter
                 onClicked: {
                     libraryController.exportToPdf()
                 }

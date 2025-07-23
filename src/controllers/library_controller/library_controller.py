@@ -68,6 +68,66 @@ class LibraryController(QObject):
     def gamesList(self):
         return self._games_list
 
+
+    @Slot()
+    def fetchGames(self):
+        try:
+            db_games = self._stats_service.get_games_list_with_rating()
+            external_games = self.load_external_games()
+
+            # Создаем словарь для объединения дубликатов
+            merged_games = {}
+
+            # Обрабатываем игры из базы данных
+            for game in db_games:
+                key = (game["name"], game.get("exe_path", ""), game.get("process_name", ""))
+                if key in merged_games:
+                    # Объединяем данные с существующей игрой
+                    existing = merged_games[key]
+                    existing["total_hours"] += game["total_hours"]
+                    existing["session_count"] += game["session_count"]
+
+                    # Обновляем даты, если они более ранние/поздние
+                    if game["first_played"] and (not existing["first_played"] or
+                                               game["first_played"] < existing["first_played"]):
+                        existing["first_played"] = game["first_played"]
+
+                    if game["last_played"] and (not existing["last_played"] or
+                                              game["last_played"] > existing["last_played"]):
+                        existing["last_played"] = game["last_played"]
+
+                    # Сохраняем метаданные, если они есть в текущей игре
+                    if game.get("icon_path") and not existing.get("icon_path"):
+                        existing["icon_path"] = game["icon_path"]
+                    if game.get("genre") and game["genre"] != "Unknown":
+                        existing["genre"] = game["genre"]
+                    if game.get("year"):
+                        existing["year"] = game["year"]
+                    if game.get("rating"):
+                        existing["rating"] = game["rating"]
+                else:
+                    # Добавляем новую игру
+                    merged_games[key] = game.copy()
+
+            # Обрабатываем внешние игры (без объединения)
+            for game in external_games:
+                key = (game["name"], game.get("exe_path", ""), game.get("process_name", ""))
+                if key not in merged_games:  # Не перезаписываем игры из базы
+                    merged_games[key] = game.copy()
+
+            # Сортируем по общему времени и преобразуем в список
+            self._games_list = sorted(
+                merged_games.values(),
+                key=lambda x: x.get("total_hours", 0),
+                reverse=True
+            )
+
+            self.gamesListChanged.emit()
+        except Exception as e:
+            print(f"Ошибка при загрузке игр: {e}")
+
+    '''
+
     @Slot()
     def fetchGames(self):
         try:
@@ -76,7 +136,7 @@ class LibraryController(QObject):
             self._games_list = sorted(db_games + external_games, key=lambda x: x.get("total_hours", 0), reverse=True)
             self.gamesListChanged.emit()
         except Exception as e:
-            print(f"Ошибка при загрузке игр: {e}")
+            print(f"Ошибка при загрузке игр: {e}")'''
 
     def load_external_games(self):
         external_games = []
