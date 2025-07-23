@@ -11,38 +11,34 @@ Item {
         anchors.fill: parent
         spacing: 10
 
-        Button {
-            text: "Сгенерировать прогноз"
-            Layout.alignment: Qt.AlignHCenter
-            onClicked: {
-                chartView.visible = false
-                errorText.text = ""
-                busyIndicator.visible = true
-                aiController.generateForecast()
-            }
-        }
-
-        BusyIndicator {
-            id: busyIndicator
-            Layout.alignment: Qt.AlignHCenter
-            running: visible
-            visible: false
-        }
-
         Text {
             id: errorText
             Layout.alignment: Qt.AlignHCenter
             color: "red"
             visible: text !== ""
+            width: parent.width
+            wrapMode: Text.WordWrap
+            horizontalAlignment: Text.AlignHCenter
+        }
+
+        Text {
+            id: summaryText
+            Layout.alignment: Qt.AlignHCenter
+            color: "black"
+            visible: text !== ""
+            width: parent.width
+            wrapMode: Text.WordWrap
+            horizontalAlignment: Text.AlignHCenter
         }
 
         ChartView {
             id: chartView
             Layout.fillWidth: true
             Layout.fillHeight: true
-            visible: false
+            visible: true  // Всегда видим
             antialiasing: true
             legend.visible: true
+            backgroundColor: "transparent"
 
             ValueAxis {
                 id: axisX
@@ -63,10 +59,8 @@ Item {
                 name: "Исторические данные"
                 axisX: axisX
                 axisY: axisY
-                style: Qt.SolidLine
-                color: "blue"
                 width: 2
-                pointsVisible: true
+                color: "blue"
             }
 
             LineSeries {
@@ -74,22 +68,25 @@ Item {
                 name: "Прогноз"
                 axisX: axisX
                 axisY: axisY
-                style: Qt.DashLine
-                color: "red"
                 width: 2
-                pointsVisible: true
+                color: "orange"
             }
         }
+    }
+
+    Component.onCompleted: {
+        errorText.text = ""
+        summaryText.text = ""
+        // Инициируем загрузку данных
+        aiController.generateForecast()
     }
 
     Connections {
         target: aiController
         function onForecastReady(historicalData, forecastData, error) {
-            busyIndicator.visible = false
-
             if (error !== "") {
                 errorText.text = error
-                chartView.visible = false
+                summaryText.text = ""
                 return
             }
 
@@ -97,11 +94,17 @@ Item {
             historicalSeries.clear()
             forecastSeries.clear()
 
+            if (historicalData.length === 0) {
+                errorText.text = "Нет исторических данных для отображения"
+                return
+            }
+
             // Заполнение исторических данных
             var minX = Number.MAX_VALUE
             var maxX = Number.MIN_VALUE
             var minY = Number.MAX_VALUE
             var maxY = Number.MIN_VALUE
+            var currentHours = 0
 
             for (var i = 0; i < historicalData.length; i++) {
                 var point = historicalData[i]
@@ -110,16 +113,30 @@ Item {
                 maxX = Math.max(maxX, point[0])
                 minY = Math.min(minY, point[1])
                 maxY = Math.max(maxY, point[1])
+                if (i === historicalData.length - 1) {
+                    currentHours = point[1]
+                }
             }
 
-            // Заполнение прогнозируемых данных
-            for (i = 0; i < forecastData.length; i++) {
-                point = forecastData[i]
-                forecastSeries.append(point[0], point[1])
-                minX = Math.min(minX, point[0])
-                maxX = Math.max(maxX, point[0])
-                minY = Math.min(minY, point[1])
-                maxY = Math.max(maxY, point[1])
+            // Заполнение прогнозируемых данных (если есть)
+            var forecastHours = currentHours
+            if (forecastData.length > 0) {
+                for (i = 0; i < forecastData.length; i++) {
+                    point = forecastData[i]
+                    forecastSeries.append(point[0], point[1])
+                    minX = Math.min(minX, point[0])
+                    maxX = Math.max(maxX, point[0])
+                    minY = Math.min(minY, point[1])
+                    maxY = Math.max(maxY, point[1])
+                    if (i === forecastData.length - 1) {
+                        forecastHours = point[1]
+                    }
+                }
+                summaryText.text = "На данный момент: " + currentHours.toFixed(2) + " часов\n" +
+                                  "Через 30 дней прогнозируется: " + forecastHours.toFixed(2) + " часов"
+            } else {
+                summaryText.text = "На данный момент: " + currentHours.toFixed(2) + " часов\n" +
+                                  "Недостаточно данных для прогноза"
             }
 
             // Обновление осей
@@ -127,8 +144,6 @@ Item {
             axisX.max = maxX + 1
             axisY.min = Math.max(0, minY - 10)
             axisY.max = maxY + 10
-
-            chartView.visible = true
         }
     }
 }

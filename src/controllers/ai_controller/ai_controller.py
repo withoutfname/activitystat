@@ -1,33 +1,10 @@
 from PySide6.QtCore import QObject, Signal, QThread, Slot
 import pandas as pd
-import torch
-import torch.nn as nn
-from torch.utils.data import Dataset, DataLoader
-from sklearn.preprocessing import MinMaxScaler
 import numpy as np
 from datetime import datetime, timedelta
-
-class TimeSeriesDataset(Dataset):
-    def __init__(self, X, y):
-        self.X = X
-        self.y = y
-
-    def __len__(self):
-        return len(self.X)
-
-    def __getitem__(self, idx):
-        return self.X[idx], self.y[idx]
-
-class LSTMModel(nn.Module):
-    def __init__(self, input_size=1, hidden_size=50, num_layers=1):
-        super(LSTMModel, self).__init__()
-        self.lstm = nn.LSTM(input_size, hidden_size, num_layers, batch_first=True)
-        self.fc = nn.Linear(hidden_size, 1)
-
-    def forward(self, x):
-        out, _ = self.lstm(x)
-        out = self.fc(out[:, -1, :])
-        return out
+from scipy.interpolate import CubicSpline
+from statsmodels.tsa.holtwinters import ExponentialSmoothing
+import warnings
 
 class ForecastWorker(QThread):
     finished = Signal(list, list, str)  # historical_data, forecast_data, error
@@ -36,8 +13,13 @@ class ForecastWorker(QThread):
         super().__init__()
         self.stats_service = stats_service
 
+
+
     def run(self):
         try:
+            # Отключаем предупреждения statsmodels
+            warnings.filterwarnings("ignore", category=Warning)
+
             # Получаем начальную дату отслеживания
             start_date = self.stats_service.get_tracking_start_date()
             if not start_date or start_date == "Unknown":
@@ -47,19 +29,34 @@ class ForecastWorker(QThread):
             start_date = pd.to_datetime(start_date)
             current_date = pd.to_datetime(datetime.now().date())
 
+            print(f"Начальная дата: {start_date}, Текущая дата: {current_date}")
+
             # Получаем данные по дням
             all_dates = pd.date_range(start=start_date, end=current_date, freq='D')
             daily_hours = []
-            for date in all_dates:
-                total_hours = self.stats_service.get_simp_total_playtime(
-                    start_days=(current_date - date).days,
-                    end_days=(current_date - date).days
-                )
-                if total_hours is None:
-                    total_hours = 0.0
-                daily_hours.append(float(total_hours))
 
-                print(f"Дата: {date}, Часы: {total_hours}")
+            # Проверяем наличие метода get_daily_simp_playtime
+            try:
+                daily_data = self.stats_service.get_daily_simp_playtime(start_date, current_date)
+                daily_hours = [0.0] * len(all_dates)
+                for date, hours in daily_data:
+                    date = pd.to_datetime(date)
+                    idx = (date - start_date).days
+                    if 0 <= idx < len(daily_hours):
+                        daily_hours[idx] = float(hours) if hours is not None else 0.0
+                print(f"Использован метод get_daily_simp_playtime, получено {len(daily_data)} записей")
+            except AttributeError:
+                print("Метод get_daily_simp_playtime не найден, используем get_simp_total_playtime")
+                for date in all_dates:
+                    total_hours = self.stats_service.get_simp_total_playtime(
+                        start_days=(current_date - date).days,
+                        end_days=(current_date - date).days
+                    )
+                    if total_hours is None:
+                        total_hours = 0.0
+                    daily_hours.append(float(total_hours))
+
+            print(f"Получено {len(daily_hours)} дней данных, первые 5 значений: {daily_hours[:5]}")
 
             # Создаем DataFrame
             daily_totals = pd.DataFrame({
@@ -69,102 +66,69 @@ class ForecastWorker(QThread):
             daily_totals['days_since_start'] = [(d - start_date).days for d in daily_totals['date']]
             daily_totals['cumulative_hours'] = daily_totals['duration_hours'].cumsum()
 
+            print(f"Создан DataFrame с {len(daily_totals)} строками")
+            print(f"Последние 5 значений cumulative_hours:\n{daily_totals[['date', 'cumulative_hours']].tail()}")
+
             # Проверяем, что данные валидны
             if daily_totals['duration_hours'].isna().any() or daily_totals['cumulative_hours'].isna().any():
-                self.finished.emit([], [], "Ошибка: В данных есть пропущенные значения")
+                error_msg = "Ошибка: В данных есть пропущенные значения"
+                print(error_msg)
+                self.finished.emit([], [], error_msg)
                 return
 
-            # Подготовка данных для LSTM
-            sequence_length = 7
-            scaler = MinMaxScaler()
-            daily_totals['duration_scaled'] = scaler.fit_transform(daily_totals[['duration_hours']])
+            # Формируем исторические данные для графика
+            historical_data = daily_totals[['days_since_start', 'cumulative_hours']].values.tolist()
+            print(f"Сформировано {len(historical_data)} точек исторических данных")
 
-            # Создание последовательностей
-            def create_sequences(data, seq_length):
-                xs, ys = [], []
-                for i in range(len(data) - seq_length):
-                    x = data[i:i + seq_length]
-                    y = data[i + seq_length]
-                    xs.append(x)
-                    ys.append(y)
-                return np.array(xs), np.array(ys)
-
-            X, y = create_sequences(daily_totals['duration_scaled'].values, sequence_length)
-            if len(X) == 0:
-                self.finished.emit([], [], "Недостаточно данных для обучения модели (нужно минимум 7 дней)")
+            # Проверяем, достаточно ли данных для прогноза
+            if len(daily_totals) < 7:
+                error_msg = f"Недостаточно данных для прогноза (только {len(daily_totals)} дней)"
+                print(error_msg)
+                self.finished.emit(historical_data, [], error_msg)
                 return
 
-            X = torch.tensor(X, dtype=torch.float32).unsqueeze(-1)
-            y = torch.tensor(y, dtype=torch.float32).unsqueeze(-1)
-
-            # Создаем Dataset и DataLoader
-            dataset = TimeSeriesDataset(X, y)
-            dataloader = DataLoader(dataset, batch_size=32, shuffle=True)
-
-            # Инициализация модели
-            model = LSTMModel()
-            criterion = nn.MSELoss()
-            optimizer = torch.optim.Adam(model.parameters(), lr=0.01)
-
-            # Обучение модели
-            num_epochs = 50
-            for epoch in range(num_epochs):
-                for X_batch, y_batch in dataloader:
-                    optimizer.zero_grad()
-                    y_pred = model(X_batch)
-                    loss = criterion(y_pred, y_batch)
-                    loss.backward()
-                    optimizer.step()
-
-            # Прогнозирование на 30 дней
+            # Holt-Winters для предсказания ЕЖЕДНЕВНЫХ значений (не кумулятивных)
             forecast_days = 30
-            future_dates = pd.date_range(start=current_date + timedelta(days=1), periods=forecast_days, freq='D')
-            future_days_since_start = [(d - start_date).days for d in future_dates]
+            ts = pd.Series(daily_totals['duration_hours'].values,
+                          index=pd.date_range(start=start_date, periods=len(daily_totals), freq='D'))
+            print(f"Создан временной ряд с частотой: {ts.index.freq}")
 
-            last_sequence = daily_totals['duration_scaled'].values[-sequence_length:]
-            last_sequence = torch.tensor(last_sequence, dtype=torch.float32).reshape(1, sequence_length, 1)
+            try:
+                model = ExponentialSmoothing(ts, trend='add', seasonal='add', seasonal_periods=7)
+                results = model.fit()
+                print("Модель Holt-Winters успешно обучена")
 
-            # Прогнозирование
-            model.eval()
-            forecasted = []
-            with torch.no_grad():
-                current_sequence = last_sequence
-                for _ in range(forecast_days):
-                    prev_pred = model(current_sequence)
-                    forecasted.append(prev_pred.item())
-                    pred = prev_pred.reshape(1, 1, 1)
-                    current_sequence = torch.cat((current_sequence[:, 1:, :], pred), dim=1)
+                # Прогноз на 30 дней (ежедневных значений)
+                daily_forecast = results.forecast(steps=forecast_days)
+                print(f"Прогноз ежедневных часов (первые 5): {daily_forecast.head()}")
 
-            # Обратное масштабирование
-            forecasted = scaler.inverse_transform(np.array(forecasted).reshape(-1, 1)).flatten()
+                # Создаем прогнозные данные для графика (кумулятивные)
+                forecast_data = []
+                last_day = daily_totals['days_since_start'].iloc[-1]
+                last_cumulative = daily_totals['cumulative_hours'].iloc[-1]
 
-            # Создание DataFrame для прогноза
-            forecast_df = pd.DataFrame({
-                'days_since_start': future_days_since_start,
-                'duration_hours': forecasted
-            })
-            forecast_df['cumulative_hours'] = daily_totals['cumulative_hours'].iloc[-1] + forecast_df['duration_hours'].cumsum()
+                cumulative = last_cumulative
+                for i in range(forecast_days):
+                    day = last_day + i + 1
+                    cumulative += daily_forecast.iloc[i]  # Добавляем прогнозируемое дневное значение
+                    forecast_data.append([float(day), float(cumulative)])
 
-            # Проверяем прогноз на валидность
-            if forecast_df['cumulative_hours'].isna().any():
-                self.finished.emit([], [], "Ошибка: Прогноз содержит пропущенные значения")
-                return
+                print(f"Прогноз кумулятивных часов на 30-й день: {cumulative:.2f}")
+                print(f"Сформирован прогноз на {forecast_days} дней")
+                self.finished.emit(historical_data, forecast_data, "")
 
-            # Формируем данные для QML
-            historical_data = [
-                [float(row['days_since_start']), float(row['cumulative_hours'])]
-                for _, row in daily_totals.iterrows()
-            ]
-            forecast_data = [
-                [float(row['days_since_start']), float(row['cumulative_hours'])]
-                for _, row in forecast_df.iterrows()
-            ]
-
-            self.finished.emit(historical_data, forecast_data, "")
+            except Exception as e:
+                error_msg = f"Ошибка при прогнозировании: {str(e)}"
+                print(error_msg)
+                self.finished.emit(historical_data, [], error_msg)
 
         except Exception as e:
-            print(f"Ошибка в ForecastWorker: {str(e)}")
-            self.finished.emit([], [], f"Ошибка: {str(e)}")
+            error_msg = f"Ошибка в ForecastWorker: {str(e)}"
+            print(error_msg)
+            self.finished.emit([], [], error_msg)
+
+
+
 
 class AiController(QObject):
     forecastReady = Signal(list, list, str)  # historical_data, forecast_data, error
@@ -173,12 +137,14 @@ class AiController(QObject):
         super().__init__()
         self.stats_service = stats_service
         self.worker = None
+        # Запускаем прогнозирование сразу при инициализации
+        self.generateForecast()
 
     @Slot()
     def generateForecast(self):
         """Запускает прогнозирование в отдельном потоке."""
         if self.worker and self.worker.isRunning():
-            return  # Не запускаем, если уже выполняется
+            self.worker.terminate()  # Прерываем предыдущий поток, если он работает
 
         self.worker = ForecastWorker(self.stats_service)
         self.worker.finished.connect(self.onForecastFinished)

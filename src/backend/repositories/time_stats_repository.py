@@ -27,7 +27,7 @@ class TimeStatsRepository:
             SELECT SUM(EXTRACT(EPOCH FROM (end_time - start_time)))
             FROM activity_sessions
             WHERE end_time IS NOT NULL
-              AND EXTRACT(EPOCH FROM (end_time - start_time)) >= 1800
+              AND EXTRACT(EPOCH FROM (end_time - start_time)) >= 600
         """
         params = []
         if start_days is not None:
